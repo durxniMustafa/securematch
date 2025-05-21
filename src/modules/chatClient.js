@@ -6,12 +6,15 @@ const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:4000';
 export function initChat() {
     function connect() {
         socket = new WebSocket(WS_URL);
+        set({ wsConnected: false });
         socket.addEventListener('open', () => {
             console.log('WS client connected');
+            set({ wsConnected: true });
         });
         socket.addEventListener('message', handleMsg);
         socket.addEventListener('close', () => {
             console.warn('WS client disconnected, retrying...');
+            set({ wsConnected: false });
             setTimeout(connect, 1000);
         });
     }

@@ -1,7 +1,16 @@
 import { subscribe } from '../store.js';
 
+const statusEl = document.getElementById('wsStatus');
+
 subscribe(state => {
-    // For example, check if no faces for a long time => reload or something
-    // Or check if we have an error from camera or detector
-    // This is just a placeholder
+    if (!statusEl) return;
+    if (state.wsConnected) {
+        statusEl.textContent = 'Online';
+        statusEl.classList.add('connected');
+        statusEl.classList.remove('disconnected');
+    } else {
+        statusEl.textContent = 'Reconnecting...';
+        statusEl.classList.remove('connected');
+        statusEl.classList.add('disconnected');
+    }
 });
