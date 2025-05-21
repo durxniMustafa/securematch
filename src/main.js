@@ -90,6 +90,7 @@ async function setup() {
         handClassifier?.reset?.();
         resetVoteMeter();
         set({ votes: {}, mode: 'idle' });
+        for (const k in lastFlash) delete lastFlash[k];
     });
 
     /* 5. enter main loop */
@@ -124,7 +125,8 @@ function tick() {
     });
 
     /* 5) overlay rendering */
-    drawOverlays(faces, hands, canvas);
+    drawOverlays(faces, hands, canvas, lastFlash);
+    pruneFlashes();
 
     /* 6) FPS counter (debug sidebar) */
     set({ fps: Math.round(1000 / (performance.now() - lastFrameTime)) });
@@ -137,6 +139,15 @@ function tick() {
 const lastFlash = {};
 function flashBox(faceId, gesture) {
     lastFlash[faceId] = { gesture, time: performance.now() };
+}
+
+function pruneFlashes() {
+    const now = performance.now();
+    for (const id in lastFlash) {
+        if (now - lastFlash[id].time > 500) {
+            delete lastFlash[id];
+        }
+    }
 }
 
 /* ────────────────────────────────────────────────────────────
