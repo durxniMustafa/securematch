@@ -13,7 +13,7 @@ const HAND_CONNECTIONS = [
  * to the *video’s* resolution so that normalized coords
  * map correctly.
  */
-export function drawOverlays(faces, hands, canvas, focusFaceId = null, gesture = null) {
+export function drawOverlays(faces, hands, canvas, flashes = {}) {
     const ctx = canvas.getContext('2d');
 
     // Match the *source* video resolution, not the CSS size.
@@ -32,9 +32,6 @@ export function drawOverlays(faces, hands, canvas, focusFaceId = null, gesture =
 
     // --- FACE BOXES ---
     faces.forEach((lm, i) => {
-        // debug: log the first landmark
-        if (i === 0) console.log('face[0][0]=', lm[0]);
-
         const xs = lm.map(p => p.x);
         const ys = lm.map(p => p.y);
         const x = Math.min(...xs) * canvas.width;
@@ -42,10 +39,15 @@ export function drawOverlays(faces, hands, canvas, focusFaceId = null, gesture =
         const w = (Math.max(...xs) - Math.min(...xs)) * canvas.width;
         const h = (Math.max(...ys) - Math.min(...ys)) * canvas.height;
 
+        // highlight face box if we recently saw a gesture
+        const info = flashes[i];
+        let color = 'white';
+        if (info && performance.now() - info.time < 400) {
+            color = info.gesture === 'yes' ? 'lime' : 'red';
+        }
+
         ctx.lineWidth = 4;
-        ctx.strokeStyle = (i === focusFaceId)
-            ? (gesture === 'yes' ? 'lime' : 'red')
-            : 'white';
+        ctx.strokeStyle = color;
         ctx.strokeRect(x, y, w, h);
     });
 
