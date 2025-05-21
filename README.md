@@ -57,6 +57,18 @@ SecureMatch Kiosk is an interactive web-based application designed for public en
 
 6.  Open the application in your browser at [http://localhost:5173](http://localhost:5173) (port configured in [`vite.config.js`](vite.config.js)).
 
+## Starting the Kiosk
+
+1.  In one terminal, start the WebSocket server:
+    ```sh
+    npm run start:ws
+    ```
+2.  In a second terminal, launch the app:
+    ```sh
+    npm run dev
+    ```
+3.  Visit [http://localhost:5173](http://localhost:5173) and step into the frame to begin.
+
 ## Usage
 
 1.  **Step into the frame**: The attractor screen (defined in [`index.html`](index.html) and managed by [`src/modules/attractor.js`](src/modules/attractor.js)) will disappear once a face is detected by [`src/modules/camera.js`](src/modules/camera.js) and [`src/modules/multiFaceDetector.js`](src/modules/multiFaceDetector.js).

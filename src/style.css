@@ -1,17 +1,28 @@
 body {
     font-family: system-ui, sans-serif;
-  }
-  
-  canvas {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    color: white;
+}
+
+canvas {
     image-rendering: pixelated;
-  }
+}
   
   .animate-pulse {
     animation: pulse 2s infinite;
   }
   
-  @keyframes pulse {
+@keyframes pulse {
     0%, 100% { opacity: 0.4; }
     50%      { opacity: 1; }
-  }
+}
+
+#resetBtn {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background-color: #333;
+    border: 1px solid #555;
+    border-radius: 0.25rem;
+    color: white;
+}
   
