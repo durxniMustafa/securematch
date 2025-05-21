@@ -51,6 +51,7 @@ let video, canvas;
 let faceDetector, faceClassifier;
 let handDetector, handClassifier;
 let lastFrameTime = performance.now();
+const lastVoteTime = { yes: 0, no: 0 };
 
 /* ────────────────────────────────────────────────────────────
    Quick on-screen YES / NO flash (debug only)
@@ -61,6 +62,15 @@ function showGesture(g) {
     el.style.backgroundColor = g === 'yes' ? 'limegreen' : 'tomato';
     el.style.display = 'block';
     setTimeout(() => (el.style.display = 'none'), 800);
+}
+
+function registerVote(gesture) {
+    const now = performance.now();
+    if (now - lastVoteTime[gesture] > 1000) {
+        lastVoteTime[gesture] = now;
+        sendVote(gesture);
+        showGesture(gesture);
+    }
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -111,16 +121,14 @@ function tick() {
     /* 3) head gestures → yes / no */
     faceClassifier.update(faces).forEach(({ id, gesture }) => {
         flashBox(id, gesture);
-        sendVote(gesture);
-        showGesture(gesture);
+        registerVote(gesture);
     });
 
     /* 4) hand gestures → yes / no */
     handClassifier.update(hands).forEach(({ gesture }) => {
         if (gesture === 'thumbs_up' || gesture === 'thumbs_down') {
             const mapped = gesture === 'thumbs_up' ? 'yes' : 'no';
-            sendVote(mapped);
-            showGesture(mapped);
+            registerVote(mapped);
         }
     });
 

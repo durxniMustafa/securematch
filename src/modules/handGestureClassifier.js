@@ -1,39 +1,52 @@
 const BUFFER_MS = 300;
 const MIN_FRAMES = 3;
+const THRESH = 0.04;           // min diff between thumb & index
+const DEBOUNCE_MS = 500;       // avoid spamming gestures
 
 export function createHandGestureClassifier() {
-    // handIndex -> array of { yThumb, yIndex, t }
+    // handIndex -> { buf: [{diff, t}], lastEmit }
     const map = new Map();
 
     return {
         update(hands) {
             const out = [];
+            const now = performance.now();
 
             hands.forEach((lm, i) => {
-                // landmarks[4] = thumb tip, [8] = index tip
-                const yThumb = lm[4].y;
-                const yIndex = lm[8].y;
+                const diff = lm[4].y - lm[8].y; // thumb tip - index tip
 
-                const buf = map.get(i) || [];
-                buf.push({ yThumb, yIndex, t: performance.now() });
+                let state = map.get(i);
+                if (!state) state = { buf: [], lastEmit: 0 };
+                state.buf.push({ diff, t: now });
 
-                // prune old entries > 300 ms
-                while (buf.length && performance.now() - buf[0].t > BUFFER_MS) {
-                    buf.shift();
+                // prune old entries
+                while (state.buf.length && now - state.buf[0].t > BUFFER_MS) {
+                    state.buf.shift();
                 }
-                map.set(i, buf);
+                map.set(i, state);
 
-                if (buf.length >= MIN_FRAMES) {
-                    const last = buf[buf.length - 1];
-                    if (last.yThumb < last.yIndex - 0.02) {
+                if (state.buf.length >= MIN_FRAMES) {
+                    const avg = state.buf.reduce((s, b) => s + b.diff, 0) / state.buf.length;
+                    if (avg < -THRESH && now - state.lastEmit > DEBOUNCE_MS) {
                         out.push({ id: i, gesture: 'thumbs_up' });
-                    } else if (last.yThumb > last.yIndex + 0.02) {
+                        state.lastEmit = now;
+                    } else if (avg > THRESH && now - state.lastEmit > DEBOUNCE_MS) {
                         out.push({ id: i, gesture: 'thumbs_down' });
+                        state.lastEmit = now;
                     }
                 }
             });
 
+            // remove stale hand states
+            map.forEach((_, key) => {
+                if (!hands[key]) map.delete(key);
+            });
+
             return out;
+        },
+
+        reset() {
+            map.clear();
         }
     };
 }

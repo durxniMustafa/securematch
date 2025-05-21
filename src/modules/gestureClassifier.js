@@ -14,6 +14,7 @@ export function createClassifierMap(options = {}) {
         baselineWindowMs: 1000,
         baselineSmoothing: 0.05,
         debounceMs: 250,
+        smoothFactor: 0.4,
         deepDebug: false,
     }, options);
 
@@ -67,6 +68,8 @@ export function createClassifierMap(options = {}) {
                     baseline: { yaw, pitch },
                     lastYaw: yaw,
                     lastPitch: pitch,
+                    smoothYaw: yaw,
+                    smoothPitch: pitch,
                     buf: [],
                     stageYaw: 0, tYaw1: 0,
                     stagePitch: 0, tPitch1: 0,
@@ -84,12 +87,15 @@ export function createClassifierMap(options = {}) {
             s.lastYaw = yaw;
             s.lastPitch = pitch;
 
-            const dyaw = yaw - s.baseline.yaw;
-            const dpitch = pitch - s.baseline.pitch;
+            s.smoothYaw += (yaw - s.smoothYaw) * cfg.smoothFactor;
+            s.smoothPitch += (pitch - s.smoothPitch) * cfg.smoothFactor;
+
+            const dyaw = s.smoothYaw - s.baseline.yaw;
+            const dpitch = s.smoothPitch - s.baseline.pitch;
             s.buf.push({ dyaw, dpitch, t: now });
             while (s.buf[0] && now - s.buf[0].t > cfg.bufferMs) s.buf.shift();
 
-            adaptBaseline(s, yaw, pitch, now);
+            adaptBaseline(s, s.smoothYaw, s.smoothPitch, now);
 
             if (cfg.deepDebug) {
                 console.debug(`face ${id} dy=${dyaw.toFixed(3)} dp=${dpitch.toFixed(3)}`);
@@ -129,9 +135,9 @@ export function createClassifierMap(options = {}) {
     function calibrate(faceId = null) {
         if (faceId !== null) {
             const s = state.get(faceId);
-            if (s) s.baseline = { yaw: s.lastYaw, pitch: s.lastPitch };
+            if (s) s.baseline = { yaw: s.smoothYaw, pitch: s.smoothPitch };
         } else {
-            state.forEach(s => { s.baseline = { yaw: s.lastYaw, pitch: s.lastPitch }; });
+            state.forEach(s => { s.baseline = { yaw: s.smoothYaw, pitch: s.smoothPitch }; });
         }
     }
 
