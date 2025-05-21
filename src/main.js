@@ -1,94 +1,145 @@
+/*****************************************************************
+ *  Application entry-point  +  main loop
+ *****************************************************************/
+
+/* ────────────────────────────────────────────────────────────
+   0)  GLOBAL TOGGLE – detailed head-pose logging
+   ──────────────────────────────────────────────────────────── */
+const DEEP_DEBUG = true;   // ⬅️ flip to false to silence dyaw/dpitch spam
+
+/*****************************************************************
+ *  1)  CAMERA
+ *****************************************************************/
 import { initCamera } from './modules/camera.js';
-import { loadDetector, detectFaces } from './modules/multiFaceDetector.js';
+
+/*****************************************************************
+ *  2)  FACE
+ *****************************************************************/
+import {
+    loadDetector as loadFaceDetector,
+    detectFaces,
+} from './modules/multiFaceDetector.js';
 import { createClassifierMap } from './modules/gestureClassifier.js';
+
+/*****************************************************************
+ *  3)  HAND
+ *****************************************************************/
+import {
+    loadHandDetector,
+    detectHands,
+} from './modules/handDetector.js';
+import { createHandGestureClassifier } from './modules/handGestureClassifier.js';
+
+/*****************************************************************
+ *  4)  UI  &  APP STATE
+ *****************************************************************/
 import { drawOverlays } from './modules/overlayRenderer.js';
-import { subscribe, set, get } from './store.js';
-import { startVoteMeter, stopVoteMeter } from './modules/voteTally.js';
+import { set, get } from './store.js';
+import {
+    startVoteMeter,
+    resetVoteMeter,
+} from './modules/voteTally.js';
 import { startQuestionCycle } from './modules/questionRotator.js';
-import { hideQR, showQR } from './modules/qrGenerator.js';
-import { initChat } from './modules/chatClient.js';
+import { initChat, sendVote } from './modules/chatClient.js';
 import { initAttractor } from './modules/attractor.js';
-import { startConfetti, stopConfetti } from './modules/confettiRenderer.js';
-import './modules/healthMonitor.js'; // auto-runs some checks
+import './modules/healthMonitor.js'; // side-effects only
 
+/* ────────────────────────────────────────────────────────────
+   Runtime references
+   ──────────────────────────────────────────────────────────── */
 let video, canvas;
-let detector;
-let classifier;
+let faceDetector, faceClassifier;
+let handDetector, handClassifier;
+let lastFrameTime = performance.now();
 
-// 1. Setup camera, face detector, gesture classifier
+/* ────────────────────────────────────────────────────────────
+   Quick on-screen YES / NO flash (debug only)
+   ──────────────────────────────────────────────────────────── */
+function showGesture(g) {
+    const el = document.getElementById('gestureIndicator');
+    el.textContent = g.toUpperCase();
+    el.style.backgroundColor = g === 'yes' ? 'limegreen' : 'tomato';
+    el.style.display = 'block';
+    setTimeout(() => (el.style.display = 'none'), 800);
+}
+
+/* ────────────────────────────────────────────────────────────
+   SET-UP
+   ──────────────────────────────────────────────────────────── */
 async function setup() {
-    // Start camera
+    /* 1. camera stream + overlay canvas */
     ({ video, canvas } = await initCamera());
 
-    // Load face detector
-    detector = await loadDetector();
+    /* 2. detectors & classifiers */
+    faceDetector = await loadFaceDetector();
+    faceClassifier = createClassifierMap({ deepDebug: DEEP_DEBUG });  // 👈 new param
 
-    // Create gesture classifier buffer
-    classifier = createClassifierMap();
+    handDetector = await loadHandDetector();
+    handClassifier = createHandGestureClassifier();
 
-    // Start question cycle
+    /* 3. ancillary UI */
     startQuestionCycle();
-
-    // Start websockets chat
     initChat();
-
-    // Start attractor logic
     initAttractor();
-
-    // Start tally meter (Chart.js)
     startVoteMeter();
 
-    // Start the main loop
+    /* 4. reset button */
+    const resetBtn = document.getElementById('resetBtn');
+    if (resetBtn) resetBtn.addEventListener('click', () => {
+        faceClassifier.reset();
+        handClassifier?.reset?.();
+        resetVoteMeter();
+        set({ votes: {}, mode: 'idle' });
+    });
+
+    /* 5. enter main loop */
     requestAnimationFrame(tick);
 }
 
-// 2. Main loop: detect faces → classify gestures → draw overlays
+/* ────────────────────────────────────────────────────────────
+   MAIN LOOP
+   ──────────────────────────────────────────────────────────── */
 function tick() {
-    const faces = detectFaces(detector, video);
-    // store the number of faces we see
-    const numFaces = faces.length;
+    /* 1) run detectors */
+    const faces = detectFaces(faceDetector, video);
+    const hands = detectHands(handDetector, video);
 
-    // If at least 1 face is visible, we set mode 'active' if currently 'idle'
-    if (numFaces > 0 && get().mode === 'idle') {
-        set({ mode: 'active' });
-    }
+    /* 2) wake UI if somebody walks in */
+    if (faces.length && get().mode === 'idle') set({ mode: 'active' });
 
-    // 2a. gesture classification
-    const results = classifier.update(faces);
-    // results can be something like [{id:0, gesture:'yes'}, ...]
-    results.forEach(r => {
-        // flash overlay color + send to server
-        flashBox(r.id, r.gesture);
-        sendVote(r.gesture);
+    /* 3) head gestures → yes / no */
+    faceClassifier.update(faces).forEach(({ id, gesture }) => {
+        flashBox(id, gesture);
+        sendVote(gesture);
+        showGesture(gesture);
     });
 
-    // 2b. draw overlays (based on first face’s gesture if multiple)
-    let highlight = null;
-    if (results.length) {
-        highlight = { focusId: results[0].id, gesture: results[0].gesture };
-    }
-    drawOverlays(faces, canvas, highlight?.focusId, highlight?.gesture);
+    /* 4) hand gestures → yes / no */
+    handClassifier.update(hands).forEach(({ gesture }) => {
+        if (gesture === 'thumbs_up' || gesture === 'thumbs_down') {
+            const mapped = gesture === 'thumbs_up' ? 'yes' : 'no';
+            sendVote(mapped);
+            showGesture(mapped);
+        }
+    });
 
-    // update FPS (optional)
+    /* 5) overlay rendering */
+    drawOverlays(faces, hands, canvas);
+
+    /* 6) FPS counter (debug sidebar) */
     set({ fps: Math.round(1000 / (performance.now() - lastFrameTime)) });
     lastFrameTime = performance.now();
 
     requestAnimationFrame(tick);
 }
 
-let lastFlash = {};
+/* helper used by overlayRenderer to briefly highlight a face box */
+const lastFlash = {};
 function flashBox(faceId, gesture) {
-    // Just store a timestamp or do something more advanced
     lastFlash[faceId] = { gesture, time: performance.now() };
 }
 
-function sendVote(gesture) {
-    // WebSocket logic in chatClient module handles it. We'll just call a function there:
-    import('./modules/chatClient.js').then(({ sendVote }) => {
-        sendVote(gesture);
-    });
-}
-
-// Start everything on page load
-let lastFrameTime = performance.now();
-setup().catch(err => console.error(err));
+/* ────────────────────────────────────────────────────────────
+   Boot-strap
+   ──────────────────────────────────────────────────────────── */
+setup().catch(err => console.error('Setup error:', err));

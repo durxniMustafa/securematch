@@ -1,20 +1,20 @@
-import { subscribe, get } from '../store.js';
+/*****************************************************************
+ *  Vote meter — Chart.js edition
+ *****************************************************************/
+import { subscribe, get, set } from '../store.js';
 import Chart from 'chart.js/auto';
 
 let chart;
 let interval;
-let ctx;
 
+/* ——— public ——— */
 export function startVoteMeter() {
     const canvas = document.getElementById('voteChart');
-    if (!canvas) return;
+    if (!canvas) return;                     // nothing to do in headless tests
 
-    // Make it visible
     canvas.classList.remove('hidden');
 
-    ctx = canvas.getContext('2d');
-
-    chart = new Chart(ctx, {
+    chart = new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: {
             labels: ['Yes', 'No'],
@@ -22,37 +22,51 @@ export function startVoteMeter() {
                 label: 'Votes',
                 data: [0, 0],
                 backgroundColor: ['limegreen', 'tomato'],
+                borderWidth: 0
             }]
         },
         options: {
             responsive: false,
-            scales: {
-                y: { beginAtZero: true, precision: 0 }
-            }
+            scales: { y: { beginAtZero: true, precision: 0 } }
         }
     });
 
-    // update chart ~5Hz
+    /* periodic refresh (200 ms ≈ 5 Hz) */
     interval = setInterval(updateChart, 200);
 
-    // subscribe to store updates if you want immediate
+    /* …plus instant update whenever the global store changes */
     subscribe(updateChart);
-}
-
-function updateChart() {
-    if (!chart) return;
-    const { tally } = get();
-    chart.data.datasets[0].data = [tally.yes, tally.no];
-    chart.update('none');
 }
 
 export function stopVoteMeter() {
     if (interval) clearInterval(interval);
     interval = null;
+
     if (chart) {
         chart.destroy();
         chart = null;
     }
-    const canvas = document.getElementById('voteChart');
-    if (canvas) canvas.classList.add('hidden');
+
+    const cv = document.getElementById('voteChart');
+    if (cv) cv.classList.add('hidden');
+}
+
+/* NEW — wipe both the chart and the stored counts */
+export function resetVoteMeter() {
+    /* zero the data in the global store (if you keep tallies there) */
+    set({ tally: { yes: 0, no: 0 } });
+
+    /* and redraw the bars */
+    if (chart) {
+        chart.data.datasets[0].data = [0, 0];
+        chart.update('none');
+    }
+}
+
+/* ——— internal ——— */
+function updateChart() {
+    if (!chart) return;
+    const { tally } = get();
+    chart.data.datasets[0].data = [tally.yes, tally.no];
+    chart.update('none');
 }
