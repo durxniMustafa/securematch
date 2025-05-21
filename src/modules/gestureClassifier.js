@@ -9,7 +9,7 @@ const LOST_TIMEOUT_MS = 1000;   // remove face if unseen for this long
 const SWING_MIN_MS = 180;    // left→right or down→up must last ≥ this
 const BASELINE_TOL = 0.015;  // how close we must return to “neutral”
 
-export function createClassifierMap() {
+export function createClassifierMap({ deepDebug = false } = {}) {
 
     /* one slot per face-id */
     const state = new Map();
@@ -18,7 +18,7 @@ export function createClassifierMap() {
     function prune(now) {
         for (const [id, s] of state) {
             if (!s._seen && now - s.lastSeen > LOST_TIMEOUT_MS) {
-                console.debug('(drop) face', id);
+                if (deepDebug) console.debug('(drop) face', id);
                 state.delete(id);
             }
         }
@@ -50,7 +50,7 @@ export function createClassifierMap() {
                     voted: false,
                     lastSeen: now,
                 };
-                console.debug('(init) face', id,
+                if (deepDebug) console.debug('(init) face', id,
                     'baseline yaw=', yaw.toFixed(3),
                     'pitch=', pitch.toFixed(3));
                 state.set(id, s);
@@ -84,7 +84,7 @@ export function createClassifierMap() {
             if (s.stageYaw === 3) {
                 const maxPitch = Math.max(...s.buf.map(o => Math.abs(o.dpitch)));
                 if (maxPitch < PITCH_THRESH * 0.5) {
-                    console.info('→ DETECTED NO (shake) face', id);
+                    if (deepDebug) console.info('→ DETECTED NO (shake) face', id);
                     gestures.push({ id, gesture: 'no' });
                     s.voted = true;
                 }
@@ -93,7 +93,7 @@ export function createClassifierMap() {
             if (s.stagePitch === 3) {
                 const maxYaw = Math.max(...s.buf.map(o => Math.abs(o.dyaw)));
                 if (maxYaw < YAW_THRESH * 0.5) {
-                    console.info('→ DETECTED YES (nod) face', id);
+                    if (deepDebug) console.info('→ DETECTED YES (nod) face', id);
                     gestures.push({ id, gesture: 'yes' });
                     s.voted = true;
                 }
@@ -107,7 +107,7 @@ export function createClassifierMap() {
     /* — wipe everything (used by the Reset button) — */
     function reset() {
         state.clear();
-        console.info('gestureClassifier.reset()');
+        if (deepDebug) console.info('gestureClassifier.reset()');
     }
 
     return { update, reset };
