@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SecureMatch Kiosk</title>
+  <!-- If you want Tailwind, set it up or remove those classes -->
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body class="bg-neutral-900 text-white flex flex-col items-center gap-2 min-h-screen p-4">
+
+  <!-- Attractor (hidden once a face is seen) -->
+  <div id="attractor" class="flex flex-col items-center gap-4 text-center animate-pulse">
+    <img src="/img/shield.svg" alt="" class="w-24 h-24"/>
+    <h1 class="text-3xl font-bold">Public Security Quiz</h1>
+    <p id="attrText" class="text-lg max-w-md"></p>
+    <p class="text-sm opacity-70">step into the frame 👣</p>
+  </div>
+
+  <!-- Question text + countdown -->
+  <h1 id="q" class="text-2xl font-semibold text-center hidden"></h1>
+  <div id="clock" class="text-lg text-center hidden"></div>
+
+  <!-- Vote Chart -->
+  <canvas id="voteChart" class="hidden" width="400" height="200"></canvas>
+
+  <!-- QR container -->
+  <div id="qrContainer" class="hidden p-2 border-2 border-white rounded-md"></div>
+
+  <!-- Main script entrypoint -->
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

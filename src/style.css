@@ -1,0 +1,17 @@
+body {
+    font-family: system-ui, sans-serif;
+  }
+  
+  canvas {
+    image-rendering: pixelated;
+  }
+  
+  .animate-pulse {
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50%      { opacity: 1; }
+  }
+  
