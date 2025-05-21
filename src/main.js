@@ -82,7 +82,11 @@ async function setup() {
 
     /* 2. detectors & classifiers */
     faceDetector = await loadFaceDetector();
-    faceClassifier = createClassifierMap({ deepDebug: DEEP_DEBUG });  // 👈 new param
+    faceClassifier = createClassifierMap({
+        deepDebug: DEEP_DEBUG,
+        yawThresh: 0.08,
+        pitchThresh: 0.08
+    });
 
     handDetector = await loadHandDetector();
     handClassifier = createHandGestureClassifier();
