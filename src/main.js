@@ -5,7 +5,7 @@
 /* ────────────────────────────────────────────────────────────
    0)  GLOBAL TOGGLE – detailed head-pose logging
    ──────────────────────────────────────────────────────────── */
-const DEEP_DEBUG = true;   // ⬅️ flip to false to silence dyaw/dpitch spam
+const DEEP_DEBUG = false;   // set true for verbose dyaw/dpitch logging
 
 /*****************************************************************
  *  1)  CAMERA
@@ -84,8 +84,8 @@ async function setup() {
     faceDetector = await loadFaceDetector();
     faceClassifier = createClassifierMap({
         deepDebug: DEEP_DEBUG,
-        yawThresh: 0.08,
-        pitchThresh: 0.08
+        yawThresh: 0.05,
+        pitchThresh: 0.05
     });
 
     handDetector = await loadHandDetector();

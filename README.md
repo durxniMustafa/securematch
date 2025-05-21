@@ -5,7 +5,7 @@ SecureMatch Kiosk is an interactive web-based application designed for public en
 ## Features
 
 - **Face Detection**: Detects multiple faces using MediaPipe's Face Landmarker. See [`src/modules/multiFaceDetector.js`](src/modules/multiFaceDetector.js).
-- **Gesture Classification**: Recognises vertical nods ("yes"), horizontal shakes ("no"), and thumb gestures. Confidence scores and visibility checks make recognition production‑ready. See [`src/modules/gestureClassifier.js`](src/modules/gestureClassifier.js).
+- **Gesture Classification**: Recognises vertical nods ("yes"), horizontal shakes ("no"), and thumb gestures. The classifier adapts to each user's neutral pose and tolerates nods in either direction. See [`src/modules/gestureClassifier.js`](src/modules/gestureClassifier.js).
 - **Real-Time Voting**: Displays live vote tallies using Chart.js. See [`src/modules/voteTally.js`](src/modules/voteTally.js).
 - **Visual Feedback**: Faces briefly flash green for "yes" and red for "no" using [`src/modules/overlayRenderer.js`](src/modules/overlayRenderer.js).
 - **Question Rotation**: Cycles through questions with a countdown timer. See [`src/modules/questionRotator.js`](src/modules/questionRotator.js).
