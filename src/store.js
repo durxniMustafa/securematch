@@ -7,7 +7,8 @@ const state = {
   question: '',
   deadline: 0,
   tally: { yes: 0, no: 0 },
-  fps: 0
+  fps: 0,
+  wsConnected: false
 };
 
 export const subscribe = fn => {
