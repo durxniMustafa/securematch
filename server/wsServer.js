@@ -1,6 +1,7 @@
 import { WebSocketServer } from 'ws';
 
-const wss = new WebSocketServer({ port: 4000 });
+const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
+const wss = new WebSocketServer({ port: PORT });
 let tally = { yes: 0, no: 0 };
 let chatHistory = [];
 
@@ -32,4 +33,4 @@ wss.on('connection', ws => {
     });
 });
 
-console.log('WS server running on ws://localhost:4000');
+console.log(`WS server running on ws://localhost:${PORT}`);

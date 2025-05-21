@@ -1,13 +1,22 @@
 import { set, get } from '../store.js';
 
 let socket;
+const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:4000';
 
 export function initChat() {
-    socket = new WebSocket('ws://localhost:4000');
-    socket.addEventListener('open', () => {
-        console.log('WS client connected');
-    });
-    socket.addEventListener('message', e => {
+    function connect() {
+        socket = new WebSocket(WS_URL);
+        socket.addEventListener('open', () => {
+            console.log('WS client connected');
+        });
+        socket.addEventListener('message', handleMsg);
+        socket.addEventListener('close', () => {
+            console.warn('WS client disconnected, retrying...');
+            setTimeout(connect, 1000);
+        });
+    }
+
+    function handleMsg(e) {
         const data = JSON.parse(e.data);
 
         if (data.type === 'snapshot') {
@@ -26,10 +35,9 @@ export function initChat() {
             // new chat message
             console.log('[CHAT]', data.msg);
         }
-    });
-    socket.addEventListener('close', () => {
-        console.warn('WS client disconnected');
-    });
+    }
+
+    connect();
 }
 
 export function sendVote(gesture) {
