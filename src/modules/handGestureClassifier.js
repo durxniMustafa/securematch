@@ -27,11 +27,12 @@ export function createHandGestureClassifier() {
 
                 if (state.buf.length >= MIN_FRAMES) {
                     const avg = state.buf.reduce((s, b) => s + b.diff, 0) / state.buf.length;
+                    const conf = Math.min(1, Math.abs(avg) / (THRESH * 2));
                     if (avg < -THRESH && now - state.lastEmit > DEBOUNCE_MS) {
-                        out.push({ id: i, gesture: 'thumbs_up' });
+                        out.push({ id: i, gesture: 'thumbs_up', confidence: conf });
                         state.lastEmit = now;
                     } else if (avg > THRESH && now - state.lastEmit > DEBOUNCE_MS) {
-                        out.push({ id: i, gesture: 'thumbs_down' });
+                        out.push({ id: i, gesture: 'thumbs_down', confidence: conf });
                         state.lastEmit = now;
                     }
                 }

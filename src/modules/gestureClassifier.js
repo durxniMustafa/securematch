@@ -16,6 +16,8 @@ export function createClassifierMap(options = {}) {
         debounceMs: 250,
         smoothFactor: 0.4,
         deepDebug: false,
+        minVis: 0.5,
+        confidenceScale: 1.5,
     }, options);
 
     const state = new Map();
@@ -30,10 +32,10 @@ export function createClassifierMap(options = {}) {
 
     function getYawPitch(lm, prevYaw, prevPitch) {
         let yaw = prevYaw, pitch = prevPitch;
-        if (lm[234]?.visibility >= 0.5 && lm[454]?.visibility >= 0.5) {
+        if (lm[234]?.visibility >= cfg.minVis && lm[454]?.visibility >= cfg.minVis) {
             yaw = lm[234].x - lm[454].x;
         }
-        if (lm[10]?.visibility >= 0.5 && lm[152]?.visibility >= 0.5) {
+        if (lm[10]?.visibility >= cfg.minVis && lm[152]?.visibility >= cfg.minVis) {
             pitch = lm[10].y - lm[152].y;
         }
         return { yaw, pitch };
@@ -71,8 +73,8 @@ export function createClassifierMap(options = {}) {
                     smoothYaw: yaw,
                     smoothPitch: pitch,
                     buf: [],
-                    stageYaw: 0, tYaw1: 0,
-                    stagePitch: 0, tPitch1: 0,
+                    stageYaw: 0, tYaw1: 0, maxYaw: 0,
+                    stagePitch: 0, tPitch1: 0, maxPitch: 0,
                     lastEmit: 0,
                     lastSeen: now,
                     steadySince: 0,
@@ -92,6 +94,8 @@ export function createClassifierMap(options = {}) {
 
             const dyaw = s.smoothYaw - s.baseline.yaw;
             const dpitch = s.smoothPitch - s.baseline.pitch;
+            if (s.stageYaw > 0) s.maxYaw = Math.max(s.maxYaw, Math.abs(dyaw));
+            if (s.stagePitch > 0) s.maxPitch = Math.max(s.maxPitch, Math.abs(dpitch));
             s.buf.push({ dyaw, dpitch, t: now });
             while (s.buf[0] && now - s.buf[0].t > cfg.bufferMs) s.buf.shift();
 
@@ -101,30 +105,48 @@ export function createClassifierMap(options = {}) {
                 console.debug(`face ${id} dy=${dyaw.toFixed(3)} dp=${dpitch.toFixed(3)}`);
             }
 
-            if (s.stageYaw === 0 && dyaw > cfg.yawThresh) { s.stageYaw = 1; s.tYaw1 = now; }
-            if (s.stageYaw === 1 && dyaw < -cfg.yawThresh && now - s.tYaw1 >= cfg.swingMinMs) { s.stageYaw = 2; }
+            if (s.stageYaw === 0 && dyaw > cfg.yawThresh) {
+                s.stageYaw = 1;
+                s.tYaw1 = now;
+                s.maxYaw = Math.abs(dyaw);
+            }
+            if (s.stageYaw === 1 && dyaw < -cfg.yawThresh && now - s.tYaw1 >= cfg.swingMinMs) {
+                s.stageYaw = 2;
+                s.maxYaw = Math.max(s.maxYaw, Math.abs(dyaw));
+            }
             if (s.stageYaw === 2 && Math.abs(dyaw) < cfg.baselineTol) { s.stageYaw = 3; }
 
-            if (s.stagePitch === 0 && dpitch < -cfg.pitchThresh) { s.stagePitch = 1; s.tPitch1 = now; }
-            if (s.stagePitch === 1 && dpitch > cfg.pitchThresh && now - s.tPitch1 >= cfg.swingMinMs) { s.stagePitch = 2; }
+            if (s.stagePitch === 0 && dpitch < -cfg.pitchThresh) {
+                s.stagePitch = 1;
+                s.tPitch1 = now;
+                s.maxPitch = Math.abs(dpitch);
+            }
+            if (s.stagePitch === 1 && dpitch > cfg.pitchThresh && now - s.tPitch1 >= cfg.swingMinMs) {
+                s.stagePitch = 2;
+                s.maxPitch = Math.max(s.maxPitch, Math.abs(dpitch));
+            }
             if (s.stagePitch === 2 && Math.abs(dpitch) < cfg.baselineTol) { s.stagePitch = 3; }
 
             if (s.stageYaw === 3) {
                 const maxPitch = Math.max(...s.buf.map(o => Math.abs(o.dpitch)));
                 if (maxPitch < cfg.pitchThresh * cfg.axisVetoFactor && now - s.lastEmit > cfg.debounceMs) {
-                    gestures.push({ id, gesture: 'no' });
+                    const conf = Math.min(1, s.maxYaw / (cfg.yawThresh * cfg.confidenceScale));
+                    gestures.push({ id, gesture: 'no', confidence: conf });
                     s.lastEmit = now;
                 }
                 s.stageYaw = 0;
+                s.maxYaw = 0;
             }
 
             if (s.stagePitch === 3) {
                 const maxYaw = Math.max(...s.buf.map(o => Math.abs(o.dyaw)));
                 if (maxYaw < cfg.yawThresh * cfg.axisVetoFactor && now - s.lastEmit > cfg.debounceMs) {
-                    gestures.push({ id, gesture: 'yes' });
+                    const conf = Math.min(1, s.maxPitch / (cfg.pitchThresh * cfg.confidenceScale));
+                    gestures.push({ id, gesture: 'yes', confidence: conf });
                     s.lastEmit = now;
                 }
                 s.stagePitch = 0;
+                s.maxPitch = 0;
             }
         });
 
