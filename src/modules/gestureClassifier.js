@@ -73,8 +73,8 @@ export function createClassifierMap(options = {}) {
                     smoothYaw: yaw,
                     smoothPitch: pitch,
                     buf: [],
-                    stageYaw: 0, tYaw1: 0, maxYaw: 0,
-                    stagePitch: 0, tPitch1: 0, maxPitch: 0,
+                    stageYaw: 0, tYaw1: 0, maxYaw: 0, yawDir: 0,
+                    stagePitch: 0, tPitch1: 0, maxPitch: 0, pitchDir: 0,
                     lastEmit: 0,
                     lastSeen: now,
                     steadySince: 0,
@@ -105,23 +105,25 @@ export function createClassifierMap(options = {}) {
                 console.debug(`face ${id} dy=${dyaw.toFixed(3)} dp=${dpitch.toFixed(3)}`);
             }
 
-            if (s.stageYaw === 0 && dyaw > cfg.yawThresh) {
+            if (s.stageYaw === 0 && Math.abs(dyaw) > cfg.yawThresh) {
                 s.stageYaw = 1;
+                s.yawDir = Math.sign(dyaw);
                 s.tYaw1 = now;
                 s.maxYaw = Math.abs(dyaw);
             }
-            if (s.stageYaw === 1 && dyaw < -cfg.yawThresh && now - s.tYaw1 >= cfg.swingMinMs) {
+            if (s.stageYaw === 1 && Math.sign(dyaw) === -s.yawDir && Math.abs(dyaw) > cfg.yawThresh && now - s.tYaw1 >= cfg.swingMinMs) {
                 s.stageYaw = 2;
                 s.maxYaw = Math.max(s.maxYaw, Math.abs(dyaw));
             }
             if (s.stageYaw === 2 && Math.abs(dyaw) < cfg.baselineTol) { s.stageYaw = 3; }
 
-            if (s.stagePitch === 0 && dpitch < -cfg.pitchThresh) {
+            if (s.stagePitch === 0 && Math.abs(dpitch) > cfg.pitchThresh) {
                 s.stagePitch = 1;
+                s.pitchDir = Math.sign(dpitch);
                 s.tPitch1 = now;
                 s.maxPitch = Math.abs(dpitch);
             }
-            if (s.stagePitch === 1 && dpitch > cfg.pitchThresh && now - s.tPitch1 >= cfg.swingMinMs) {
+            if (s.stagePitch === 1 && Math.sign(dpitch) === -s.pitchDir && Math.abs(dpitch) > cfg.pitchThresh && now - s.tPitch1 >= cfg.swingMinMs) {
                 s.stagePitch = 2;
                 s.maxPitch = Math.max(s.maxPitch, Math.abs(dpitch));
             }
@@ -135,6 +137,7 @@ export function createClassifierMap(options = {}) {
                     s.lastEmit = now;
                 }
                 s.stageYaw = 0;
+                s.yawDir = 0;
                 s.maxYaw = 0;
             }
 
@@ -146,6 +149,7 @@ export function createClassifierMap(options = {}) {
                     s.lastEmit = now;
                 }
                 s.stagePitch = 0;
+                s.pitchDir = 0;
                 s.maxPitch = 0;
             }
         });
