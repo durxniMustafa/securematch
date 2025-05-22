@@ -115,14 +115,19 @@ export function createClassifierMap(options = {}) {
 
             if (id === 0) meterValue = Math.abs(yawDot) / cfg.yVel;
 
-            /* ===== YES / NOD FSM ===== */
+            /* ===== YES / NOD FSM (Down-then-Up) ===== */
             switch (s.nodState) {
               case 'idle':
-                if (pitchDot > cfg.pVel) { s.nodState = 'down'; s.nodT0 = now; }
+                // Look for a quick downward movement first
+                if (pitchDot < -cfg.pVel) {
+                  s.nodState = 'nod_started_down';
+                  s.nodT0 = now;
+                }
                 break;
 
-              case 'down':
-                if (pitchDot < -cfg.pVel && now - s.nodT0 < cfg.nodWindowMs) {
+              case 'nod_started_down':
+                // Then look for a quick upward movement
+                if (pitchDot > cfg.pVel && now - s.nodT0 < cfg.nodWindowMs) {
                   if (avgAbsYaw < cfg.guardYaw && now - s.lastEmit > cfg.refractoryMs) {
                     const conf = Math.min(1, Math.abs(pitchDot) / cfg.pVel);
                     gestures.push({ id, gesture: 'yes', confidence: conf });
