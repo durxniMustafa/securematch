@@ -176,12 +176,18 @@ export function createClassifierMap(options = {}) {
         return gestures;
     }
 
-    function calibrate(faceId = null) {
+    function calibrate(faceId = null, baseline = null) {
         if (faceId !== null) {
             const s = state.get(faceId);
-            if (s) s.baseline = { yaw: s.smoothYaw, pitch: s.smoothPitch };
+            if (s) {
+                if (baseline) s.baseline = { yaw: baseline.yaw, pitch: baseline.pitch };
+                else s.baseline = { yaw: s.smoothYaw, pitch: s.smoothPitch };
+            }
         } else {
-            state.forEach(s => { s.baseline = { yaw: s.smoothYaw, pitch: s.smoothPitch }; });
+            state.forEach(s => {
+                if (baseline) s.baseline = { yaw: baseline.yaw, pitch: baseline.pitch };
+                else s.baseline = { yaw: s.smoothYaw, pitch: s.smoothPitch };
+            });
         }
     }
 

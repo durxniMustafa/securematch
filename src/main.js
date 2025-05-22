@@ -21,6 +21,8 @@ import {
 } from './modules/multiFaceDetector.js';
 import { createClassifierMap } from './modules/gestureClassifier.js';
 import { mbp2020Defaults } from './modules/mbp2020Defaults.js';
+import { createCalibrator } from './modules/calibrator.js';
+import { initCalibratorUI } from './modules/calibratorUI.js';
 
 /*****************************************************************
  *  3)  HAND
@@ -56,16 +58,24 @@ import { initLogger } from './modules/logger.js';
 let video, canvas;
 let faceDetector, faceClassifier;
 let handDetector, handClassifier;
+const calibrators = new Map();
+let calibUI;
+let pendingCalib = false;
 let fps = 30,
     lastTs = performance.now();
 const lastVoteTime = { yes: 0, no: 0 };
 const COOLDOWN = 500; // minimum time between votes per gesture
 
-let lastYaw = 0,
-    lastPitch = 0;
 
-let firstSeen = 0,
-    autoCalibrated = false;
+
+function getYawPitch(lm) {
+    return {
+        yaw: lm[234].x - lm[454].x,
+        pitch: lm[10].y - lm[152].y,
+    };
+}
+
+let firstSeen = 0;
 
 
 function updateFps(now) {
@@ -125,6 +135,7 @@ async function setup() {
     initChat();
     initAttractor();
     startVoteMeter();
+    calibUI = initCalibratorUI();
     initLogger(subscribe);
     appendLog('App initialised');
 
@@ -139,7 +150,7 @@ async function setup() {
     });
 
     const calibrateBtn = document.getElementById('calibrateBtn');
-    if (calibrateBtn) calibrateBtn.onclick = () => faceClassifier.calibrate();
+    if (calibrateBtn) calibrateBtn.onclick = () => { pendingCalib = true; };
 
     /* 5. enter main loop */
     scheduleTick();
@@ -155,26 +166,44 @@ function tick(now) {
     const hands = faces.length ? detectHands(handDetector, video) : [];
 
 
-    if (faces[0] && faces[0][234] && faces[0][454] && faces[0][10] && faces[0][152]) {
-        const yaw = faces[0][234].x - faces[0][454].x;
-        const pitch = faces[0][10].y - faces[0][152].y;
-        if (Math.abs(yaw - lastYaw) > 0.02 || Math.abs(pitch - lastPitch) > 0.02) {
-            lastYaw = yaw;
-            lastPitch = pitch;
-            appendLog(`yaw=${yaw.toFixed(3)} pitch=${pitch.toFixed(3)}`);
+    faces.forEach((lm, id) => {
+        if (!lm[234] || !lm[454] || !lm[10] || !lm[152]) return;
+        const { yaw, pitch } = getYawPitch(lm);
+
+        let cal = calibrators.get(id);
+        if (!cal) {
+            cal = createCalibrator();
+            calibrators.set(id, cal);
         }
-    }
+
+        if (pendingCalib || (cal.state !== 'READY' && !cal.active)) {
+            cal.start(yaw, pitch);
+            if (pendingCalib) calibUI?.showToast('Hold still…');
+        }
+
+        const res = cal.update(yaw, pitch);
+
+        if (res.baseline) {
+            faceClassifier.calibrate(id, res.baseline);
+            calibUI?.showToast('Calibration complete');
+            calibUI?.beep();
+        }
+
+        if (id === 0) {
+            calibUI?.update(res.progress || 0, res.still);
+            if (DEEP_DEBUG) {
+                const dy = yaw - cal.baseline.yaw;
+                const dp = pitch - cal.baseline.pitch;
+                calibUI?.updateInfo(`dy=${dy.toFixed(3)} dp=${dp.toFixed(3)}`);
+            }
+        }
+    });
+    pendingCalib = false;
 
     if (faces.length) {
         if (!firstSeen) firstSeen = performance.now();
-        if (!autoCalibrated && performance.now() - firstSeen > 1000) {
-            faceClassifier.calibrate();
-            appendLog('Auto calibrated');
-            autoCalibrated = true;
-        }
     } else {
         firstSeen = 0;
-        autoCalibrated = false;
     }
 
     /* 2) wake UI if somebody walks in */
@@ -182,6 +211,7 @@ function tick(now) {
 
     /* 3) head gestures → yes / no */
     faceClassifier.update(faces).forEach(({ id, gesture }) => {
+        if (calibrators.get(id)?.state !== 'READY') return;
         appendLog(`FSM-state=${faceClassifier.state}  gesture=${gesture}`);
         flashBox(id, gesture);
         registerVote(gesture);
