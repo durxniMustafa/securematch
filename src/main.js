@@ -38,8 +38,6 @@ import { drawOverlays } from './modules/overlayRenderer.js';
 
 import { set, get, subscribe, appendLog } from './store.js';
 
-import { set, get, appendLog } from './store.js';
-
 import {
     startVoteMeter,
     resetVoteMeter,
@@ -169,6 +167,7 @@ function tick(now) {
             lastPitch = pitch;
             appendLog(`yaw=${yaw.toFixed(3)} pitch=${pitch.toFixed(3)}`);
         }
+    }
 
     if (faces.length) {
         if (!firstSeen) firstSeen = performance.now();
