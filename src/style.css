@@ -1,11 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
 body {
-    font-family: system-ui, sans-serif;
-    background: linear-gradient(135deg, #1e293b, #0f172a);
+    font-family: 'Inter', system-ui, sans-serif;
+    background: linear-gradient(135deg, #172554, #0e172a);
     color: white;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 1rem;
+    min-height: 100vh;
 }
 
 canvas {
@@ -68,14 +71,17 @@ canvas {
 #scoreboard {
     display: flex;
     gap: 1rem;
+    margin-top: 1rem;
+    font-weight: 600;
 }
 
 #scoreboard div {
-    background: rgba(0, 0, 0, 0.5);
-    padding: 0.25rem 0.75rem;
-    border-radius: 0.25rem;
+    background: rgba(0, 0, 0, 0.55);
+    padding: 0.35rem 0.9rem;
+    border-radius: 0.5rem;
     min-width: 80px;
     text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
 }
 
 #logPanel div {
@@ -108,7 +114,8 @@ canvas {
     padding: 0.5rem;
     font-size: 0.75rem;
     line-height: 1.2;
-    border-radius: 0.25rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
     white-space: pre-wrap;
 }
 

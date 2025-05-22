@@ -20,6 +20,8 @@ export function createClassifierMap(options = {}) {
 
         guardYaw: 0.18,      // 10.3 °   static after calibration
         guardPitch: 0.22,    // 12.6 °
+        pitchAmp: 0.04,      // min amplitude for a nod (symmetry)
+        yawAmp: 0.04,        // min amplitude for a shake
         refractoryMs: 600,   // lock-out after an emit
     }, options);
 
@@ -126,10 +128,12 @@ export function createClassifierMap(options = {}) {
                 }
                 break;
 
-              case 'nod_started':
-                // Look for a strong swing in the opposite direction
+              case 'nod_started': {
+                const diff = dpitch * s.nodDir;
+                const crossed = diff < -cfg.pitchAmp;
                 if (((s.nodDir < 0 && pitchDot > cfg.pVel) ||
                      (s.nodDir > 0 && pitchDot < -cfg.pVel)) &&
+                    crossed &&
                     now - s.nodT0 < cfg.nodWindowMs) {
                   if (avgAbsYaw < cfg.guardYaw && now - s.lastEmit > cfg.refractoryMs) {
                     const conf = Math.min(1, Math.abs(pitchDot) / cfg.pVel);
@@ -141,6 +145,7 @@ export function createClassifierMap(options = {}) {
                   s.nodState = 'idle';             // timeout
                 }
                 break;
+              }
             }
 
             /* ===== NO / SHAKE FSM ===== */
@@ -150,7 +155,11 @@ export function createClassifierMap(options = {}) {
               s.shakeT0       = now;
             }
             if (s.shakeSwinging) {
-              if (Math.sign(yawDot) === -s.shakeDir && Math.abs(yawDot) > cfg.yVel) {
+              const diff = dyaw * s.shakeDir;
+              const crossed = diff < -cfg.yawAmp;
+              if (Math.sign(yawDot) === -s.shakeDir &&
+                  Math.abs(yawDot) > cfg.yVel &&
+                  crossed) {
                 if (now - s.shakeT0 < cfg.shakeWindowMs &&
                     avgAbsPitch < cfg.guardPitch &&
                     now - s.lastEmit > cfg.refractoryMs) {
