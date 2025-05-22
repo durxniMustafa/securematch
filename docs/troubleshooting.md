@@ -9,6 +9,6 @@ This guide explains why common gesture-recognition issues occur and how to resol
 | **First nod after load is ignored** | The baseline uses the pose on the very first frame, so any initial tilt reduces the apparent movement of the first gesture. | Call `calibrate()` once you're looking straight at the camera or provide a "tap‑to‑calibrate" option. |
 | **A few nods work, then nothing** | The adaptive baseline treats slow motion as "still" and gradually drifts toward the new pose. Future gestures then fall below the thresholds. | Increase `baselineTol` (e.g. 0.025) to ignore casual motion or shorten `baselineWindowMs` so baseline drift only occurs when truly still. |
 | **Shakes recognised but nods aren't (or vice versa)** | The **axis veto** (`axisVetoFactor = 0.8`) rejects nods if lateral motion is 80 % of its threshold. Camera tilt mixes yaw into pitch, causing the veto. | Lower `axisVetoFactor` (e.g. 0.4) or level the camera. Using actual yaw/pitch angles instead of pixel deltas avoids this coupling. |
-| **Confidence always low (< 0.3)** | `confidence = amplitude / (threshold × confidenceScale)`. Lowering thresholds without adjusting `confidenceScale` reduces confidence. | Set `confidenceScale` ≈ 1.0 when you halve the thresholds. |
+
 | **Landmark deltas read as zero** | Landmarks 234/454/10/152 have `visibility < minVis` (0.5) or sometimes return `undefined`. | Lower `minVis` to 0.3 and guard against `undefined`: `if (!lm[234] || !lm[454]) return;` |
 

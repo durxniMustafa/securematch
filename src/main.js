@@ -19,8 +19,10 @@ import {
     loadDetector as loadFaceDetector,
     detectFaces,
 } from './modules/multiFaceDetector.js';
+import { createClassifierMap, DEFAULT_THRESH_MBPRO } from './modules/gestureClassifier.js';
 import { createClassifierMap } from './modules/gestureClassifier.js';
 import { mbp2020Defaults } from './modules/mbp2020Defaults.js';
+ main
 
 /*****************************************************************
  *  3)  HAND
@@ -78,7 +80,7 @@ function showGesture(g) {
 
 function registerVote(gesture) {
     const now = performance.now();
-    if (now - lastVoteTime[gesture] > 1000) {
+    if (now - lastVoteTime[gesture] > 800) {
         lastVoteTime[gesture] = now;
         sendVote(gesture);
         showGesture(gesture);
@@ -95,8 +97,13 @@ async function setup() {
     /* 2. detectors & classifiers */
     faceDetector = await loadFaceDetector();
     faceClassifier = createClassifierMap({
+        deepDebug: DEEP_DEBUG,
+        yawThresh: DEFAULT_THRESH_MBPRO,
+        pitchThresh: DEFAULT_THRESH_MBPRO
+
         ...mbp2020Defaults,
         deepDebug: DEEP_DEBUG
+main
     });
 
     handDetector = await loadHandDetector();
@@ -122,7 +129,7 @@ async function setup() {
     if (calibrateBtn) calibrateBtn.onclick = () => faceClassifier.calibrate();
 
     /* 5. enter main loop */
-    requestAnimationFrame(tick);
+    scheduleTick();
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -132,7 +139,7 @@ function tick(now) {
     updateFps(now);
     /* 1) run detectors */
     const faces = detectFaces(faceDetector, video);
-    const hands = detectHands(handDetector, video);
+    const hands = faces.length ? detectHands(handDetector, video) : [];
 
     /* 2) wake UI if somebody walks in */
     if (faces.length && get().mode === 'idle') set({ mode: 'active' });
@@ -152,13 +159,15 @@ function tick(now) {
     });
 
     /* 5) overlay rendering */
-    drawOverlays(faces, hands, canvas, lastFlash);
+    if (get().mode !== 'idle') {
+        drawOverlays(faces, hands, canvas, lastFlash);
+    }
     pruneFlashes();
 
     const meter = document.getElementById('gestureMeter');
     if (meter) meter.value = faceClassifier.getMeterValue();
 
-    requestAnimationFrame(tick);
+    scheduleTick();
 }
 
 /* helper used by overlayRenderer to briefly highlight a face box */
@@ -173,6 +182,15 @@ function pruneFlashes() {
         if (now - lastFlash[id].time > 500) {
             delete lastFlash[id];
         }
+    }
+}
+
+function scheduleTick() {
+    if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
+        video.requestVideoFrameCallback(() => tick());
+    } else {
+        requestAnimationFrame(tick);
+        setTimeout(tick, 33); // keep running when RAF pauses
     }
 }
 

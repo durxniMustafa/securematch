@@ -21,4 +21,4 @@ export const set = patch => {
   listeners.forEach(fn => fn(state));
 };
 
-export const get = () => state;
+export const get = () => ({ ...state });
