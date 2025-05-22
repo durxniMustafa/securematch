@@ -41,15 +41,8 @@ When a client connects it receives the current state:
 ## Customisation
 
 ### Editing the Question List
-Questions are defined near the top of [`src/modules/questionRotator.js`](../src/modules/questionRotator.js):
-```javascript
-const questions = [
-    "Is cybersecurity everyone's responsibility?",
-    "Do you lock your laptop whenever you walk away?",
-    "Would you nod to indicate 'yes' right now?",
-];
-```
-Modify this array to change what appears in the kiosk.
+Questions are loaded from [`public/questions.json`](../public/questions.json).
+Edit this JSON file to change what appears in the kiosk.
 
 ### Adjusting Gesture Thresholds
 The gesture classifier accepts threshold options. [`src/modules/mbp2020Defaults.js`](../src/modules/mbp2020Defaults.js) provides a preset used in [`src/main.js`](../src/main.js):

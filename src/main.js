@@ -35,7 +35,7 @@ import { createHandGestureClassifier } from './modules/handGestureClassifier.js'
  *  4)  UI  &  APP STATE
  *****************************************************************/
 import { drawOverlays } from './modules/overlayRenderer.js';
-import { set, get } from './store.js';
+import { set, get, appendLog } from './store.js';
 import {
     startVoteMeter,
     resetVoteMeter,
@@ -44,6 +44,7 @@ import { startQuestionCycle } from './modules/questionRotator.js';
 import { initChat, sendVote } from './modules/chatClient.js';
 import { initAttractor } from './modules/attractor.js';
 import './modules/healthMonitor.js'; // side-effects only
+import './modules/logger.js'; // side-effects only
 
 /* ────────────────────────────────────────────────────────────
    Runtime references
@@ -54,6 +55,8 @@ let handDetector, handClassifier;
 let fps = 30,
     lastTs = performance.now();
 const lastVoteTime = { yes: 0, no: 0 };
+let firstSeen = 0,
+    autoCalibrated = false;
 
 function updateFps(now) {
     const dt = now - lastTs;
@@ -82,6 +85,7 @@ function registerVote(gesture) {
         lastVoteTime[gesture] = now;
         sendVote(gesture);
         showGesture(gesture);
+        appendLog(`Gesture detected: ${gesture}`);
     }
 }
 
@@ -106,7 +110,7 @@ async function setup() {
     handClassifier = createHandGestureClassifier();
 
     /* 3. ancillary UI */
-    startQuestionCycle();
+    await startQuestionCycle();
     initChat();
     initAttractor();
     startVoteMeter();
@@ -136,6 +140,18 @@ function tick(now) {
     /* 1) run detectors */
     const faces = detectFaces(faceDetector, video);
     const hands = faces.length ? detectHands(handDetector, video) : [];
+
+    if (faces.length) {
+        if (!firstSeen) firstSeen = performance.now();
+        if (!autoCalibrated && performance.now() - firstSeen > 1000) {
+            faceClassifier.calibrate();
+            appendLog('Auto calibrated');
+            autoCalibrated = true;
+        }
+    } else {
+        firstSeen = 0;
+        autoCalibrated = false;
+    }
 
     /* 2) wake UI if somebody walks in */
     if (faces.length && get().mode === 'idle') set({ mode: 'active' });

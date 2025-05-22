@@ -8,7 +8,8 @@ const state = {
   deadline: 0,
   tally: { yes: 0, no: 0 },
   fps: 0,
-  wsConnected: false
+  wsConnected: false,
+  logs: []
 };
 
 export const subscribe = fn => {
@@ -22,3 +23,9 @@ export const set = patch => {
 };
 
 export const get = () => ({ ...state });
+
+export const appendLog = msg => {
+  state.logs.push({ msg, time: Date.now() });
+  if (state.logs.length > 50) state.logs.shift();
+  set({ logs: state.logs });
+};

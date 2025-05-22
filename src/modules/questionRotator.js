@@ -2,16 +2,25 @@ import { set, get } from '../store.js';
 import { showQR, hideQR } from './qrGenerator.js';
 import { stopVoteMeter } from './voteTally.js';
 
-const questions = [
-    "Is cybersecurity everyone's responsibility?",
-    "Do you lock your laptop whenever you walk away?",
-    "Would you nod to indicate 'yes' right now?",
-];
+let questions = [];
 
 let currentIndex = 0;
 let timerHandle;
 
-export function startQuestionCycle() {
+export async function startQuestionCycle() {
+    try {
+        const res = await fetch('questions.json');
+        questions = await res.json();
+    } catch (err) {
+        console.error('Failed to load questions.json', err);
+        questions = [
+            "Is cybersecurity everyone's responsibility?",
+            "Do you lock your laptop whenever you walk away?",
+            "Would you nod to indicate 'yes' right now?",
+        ];
+    }
+
+    if (!questions.length) return;
     // Start the first question
     showQuestion(questions[currentIndex]);
 }
