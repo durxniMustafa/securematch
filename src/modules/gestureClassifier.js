@@ -25,6 +25,7 @@ export function createClassifierMap(options = {}) {
 
     const state = new Map();
     let meterValue = 0;
+    let publicState = '';
 
     function prune(now) {
         for (const [id, s] of state) {
@@ -69,6 +70,7 @@ export function createClassifierMap(options = {}) {
         state.forEach(s => { s._seen = false; });
 
         meterValue = 0;
+        publicState = '';
         faces.forEach((lm, id) => {
             let s = state.get(id);
             if (!s) {
@@ -161,6 +163,10 @@ export function createClassifierMap(options = {}) {
                 s.pitchDir = 0;
                 s.maxPitch = 0;
             }
+
+            if (id === 0) {
+                publicState = `Y${s.stageYaw}P${s.stagePitch}`;
+            }
         });
 
         prune(now);
@@ -180,5 +186,12 @@ export function createClassifierMap(options = {}) {
         state.clear();
     }
 
-    return { update, reset, calibrate, config: cfg, getMeterValue: () => meterValue };
+    return {
+        update,
+        reset,
+        calibrate,
+        config: cfg,
+        getMeterValue: () => meterValue,
+        get state() { return publicState; },
+    };
 }
