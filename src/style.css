@@ -30,6 +30,28 @@ canvas {
     color: white;
 }
 
+#calibrateBtn {
+    margin-top: 1rem;
+    margin-right: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: #333;
+    border: 1px solid #555;
+    border-radius: 0.25rem;
+    color: white;
+}
+
+.controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+#gestureMeter {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    width: 80px;
+}
+
 #wsStatus {
     position: fixed;
     bottom: 10px;

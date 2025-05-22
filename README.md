@@ -13,6 +13,8 @@ SecureMatch Kiosk is an interactive web-based application designed for public en
 - **Confetti Animation**: Celebratory confetti animation. See [`src/modules/confettiRenderer.js`](src/modules/confettiRenderer.js).
 - **QR Code Generation**: Displays QR codes for further discussion links. See [`src/modules/qrGenerator.js`](src/modules/qrGenerator.js).
 - **Reset Button**: Clears the in-memory tallies and face state for a new session.
+- **Calibrate Button**: Lets users set the neutral pose for reliable detection.
+- **Scoreboard**: Shows current counts for Yes and No votes.
 - **Connection Status**: Shows whether the kiosk is connected to the vote server.
 
 ## Project Structure
