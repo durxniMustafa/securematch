@@ -129,8 +129,7 @@ export function createClassifierMap(options = {}) {
                 break;
 
               case 'nod_started': {
-                const diff = dpitch * s.nodDir;
-                const crossed = diff < -cfg.pitchAmp;
+                const crossed = Math.abs(dpitch) > cfg.pitchAmp;
                 if (((s.nodDir < 0 && pitchDot > cfg.pVel) ||
                      (s.nodDir > 0 && pitchDot < -cfg.pVel)) &&
                     crossed &&
@@ -155,8 +154,7 @@ export function createClassifierMap(options = {}) {
               s.shakeT0       = now;
             }
             if (s.shakeSwinging) {
-              const diff = dyaw * s.shakeDir;
-              const crossed = diff < -cfg.yawAmp;
+              const crossed = Math.abs(dyaw) > cfg.yawAmp;
               if (Math.sign(yawDot) === -s.shakeDir &&
                   Math.abs(yawDot) > cfg.yVel &&
                   crossed) {

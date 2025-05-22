@@ -184,7 +184,7 @@ function tick(now) {
             calibrators.set(id, cal);
         }
 
-        if (pendingCalib || (cal.state !== 'READY' && !cal.active)) {
+        if ((pendingCalib && cal.state !== 'READY') || (cal.state === 'WAIT_STABLE' && !cal.active)) {
             cal.start(yaw, pitch);
             if (pendingCalib) calibUI?.showToast('Hold still…');
         }
