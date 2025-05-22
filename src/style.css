@@ -78,6 +78,25 @@ canvas {
     text-align: center;
 }
 
+#logPanel {
+    position: fixed;
+    bottom: 2.5rem;
+    left: 10px;
+    max-width: 300px;
+    max-height: 120px;
+    overflow-y: auto;
+    background: rgba(0,0,0,0.6);
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.8rem;
+    line-height: 1.2;
+    white-space: pre-wrap;
+}
+
+#logPanel div {
+    margin-bottom: 0.25rem;
+}
+
 #instructions {
     max-width: 400px;
     background: rgba(0, 0, 0, 0.3);
