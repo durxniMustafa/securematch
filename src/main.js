@@ -49,8 +49,6 @@ import './modules/healthMonitor.js'; // side-effects only
 
 import { initLogger } from './modules/logger.js';
 
-import './modules/logger.js'; // side-effects only
-
 
 /* ────────────────────────────────────────────────────────────
    Runtime references
@@ -114,9 +112,10 @@ async function setup() {
     faceClassifier = createClassifierMap({
         deepDebug: DEEP_DEBUG,
         ...mbp2020Defaults,
-        pitchThresh: 0.18,
+        pitchThresh: 0.1,
+        swingMinMs: 200,
+        oppSwingRatio: 0.4,
     });
-    faceClassifier.config.swingMinMs = 250;
 
     handDetector = await loadHandDetector();
     handClassifier = createHandGestureClassifier();
