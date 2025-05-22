@@ -27,7 +27,7 @@ export function createClassifierMap(options = {}) {
          */
         pVel: 0.30,     // was 0.25; now needs ~10–12 deg/s in 0–1 coords
         yVel: 0.25,     // was 0.25
-        pitchAmp: 0.07, // was 0.06
+        pitchAmp: 0.10, // was 0.07, then 0.06
         yawAmp: 0.06,  // was 0.06
 
         nodWindowMs: 600,  // time from down→up
@@ -41,11 +41,13 @@ export function createClassifierMap(options = {}) {
          * This helps avoid double triggers when velocity briefly spikes
          * during a real nod or shake.
          */
-        velHoldFrames: 2,
+        velHoldFrames: 3, // was 2
+        MAX_VEL: 2.0, // Max velocity cap
 
     }, options, {
         /** final override: ensure logs appear */
         deepDebug: true
+
     });
 
     const state = new Map();  // ID -> per-face state
@@ -106,6 +108,7 @@ export function createClassifierMap(options = {}) {
                     nodState: 'idle',
                     nodT0: 0,
                     nodDir: 0,
+                    nodConsecutiveFrames: 0, // For debounce
 
                     shakeSwinging: false,
                     shakeDir: 0,
@@ -151,6 +154,10 @@ export function createClassifierMap(options = {}) {
             let pitchDot = (pitch - s.prevPitchRaw) / dt;
             s.prevYawRaw = yaw;
             s.prevPitchRaw = pitch;
+
+            // Cap velocity (Fix 3)
+            yawDot = Math.min(cfg.MAX_VEL, Math.max(-cfg.MAX_VEL, yawDot));
+            pitchDot = Math.min(cfg.MAX_VEL, Math.max(-cfg.MAX_VEL, pitchDot));
 
             if (s.velHold > 0) {
                 s.velHold--;
@@ -203,7 +210,9 @@ export function createClassifierMap(options = {}) {
                         (s.nodDir > 0 && pitchDot < -cfg.pVel);
 
                     if (reversedVel && crossed && enoughTime) {
+                        s.nodConsecutiveFrames++; // Increment debounce counter
                         if (
+                            s.nodConsecutiveFrames >= 3 && // Check debounce (Fix 1)
                             avgAbsYaw < cfg.guardYaw &&
                             (nowMs - s.lastEmit > cfg.refractoryMs)
                         ) {
@@ -212,10 +221,21 @@ export function createClassifierMap(options = {}) {
                             gestures.push({ id, gesture: 'yes', confidence: conf });
                             s.lastEmit = nowMs;
                             s.velHold = cfg.velHoldFrames;
+                            s.nodState = 'idle'; // Reset after gesture
+                            s.nodConsecutiveFrames = 0; // Reset debounce counter
                         }
-                        s.nodState = 'idle';
+                        // If not enough consecutive frames, but conditions met, stay in nod_started
+                        // (unless it's a timeout, handled below)
                     } else if (!enoughTime) {
                         s.nodState = 'idle'; // timeout
+                        s.nodConsecutiveFrames = 0; // Reset debounce on timeout
+                    } else {
+                        // Conditions for reversal/amplitude not met, reset debounce counter
+                        s.nodConsecutiveFrames = 0;
+                        // Potentially reset nodState to 'idle' if velocity is no longer significant
+                        // or if direction changed without crossing amplitude.
+                        // For now, let's keep it simple and only reset on timeout or successful gesture.
+                        // If we want to be stricter, we could reset to idle here too.
                     }
                     break;
                 }
