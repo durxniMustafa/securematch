@@ -48,10 +48,11 @@ Edit this JSON file to change what appears in the kiosk.
 The gesture classifier accepts threshold options. [`src/modules/mbp2020Defaults.js`](../src/modules/mbp2020Defaults.js) provides a preset used in [`src/main.js`](../src/main.js):
 ```javascript
 faceClassifier = createClassifierMap({
-    yawThresh: DEFAULT_THRESH_MBPRO,
-    pitchThresh: DEFAULT_THRESH_MBPRO,
+    deepDebug: DEEP_DEBUG,
     ...mbp2020Defaults,
+    pitchThresh: 0.18,    // gentler nod threshold
 });
+faceClassifier.config.swingMinMs = 250;  // allow slower nods
 ```
 Tweaking values in `mbp2020Defaults.js`—such as `yawThresh` or `pitchThresh`—alters how sensitive nod and shake detection is.
 
