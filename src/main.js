@@ -20,9 +20,7 @@ import {
     detectFaces,
 } from './modules/multiFaceDetector.js';
 import { createClassifierMap, DEFAULT_THRESH_MBPRO } from './modules/gestureClassifier.js';
-import { createClassifierMap } from './modules/gestureClassifier.js';
 import { mbp2020Defaults } from './modules/mbp2020Defaults.js';
- main
 
 /*****************************************************************
  *  3)  HAND
@@ -99,11 +97,9 @@ async function setup() {
     faceClassifier = createClassifierMap({
         deepDebug: DEEP_DEBUG,
         yawThresh: DEFAULT_THRESH_MBPRO,
-        pitchThresh: DEFAULT_THRESH_MBPRO
-
+        pitchThresh: DEFAULT_THRESH_MBPRO,
         ...mbp2020Defaults,
-        deepDebug: DEEP_DEBUG
-main
+        deepDebug: DEEP_DEBUG,
     });
 
     handDetector = await loadHandDetector();
