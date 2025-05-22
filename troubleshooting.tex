@@ -1,0 +1,65 @@
+\section{Gesture Troubleshooting
+Guide}\label{gesture-troubleshooting-guide}
+
+This guide explains why common gesture-recognition issues occur and how
+to resolve them when using \texttt{gestureClassifier.js}.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.2368}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.4211}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3421}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Symptom
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Why it happens
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+What to try
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\textbf{No gesture fires}\texttt{deepDebug} shows
+\texttt{dy}/\texttt{dp} always under ±0.08 & The default
+\texttt{yawThresh}/\texttt{pitchThresh} (0.10) are higher than your
+measured deltas. This happens when faces are small in the frame or on
+wide‑angle cameras. & Lower the thresholds to around \textbf{0.04} or
+enlarge the face area. Example:
+\texttt{createClassifierMap(\{\ yawThresh:\ 0.05,\ pitchThresh:\ 0.05\ \})} \\
+\textbf{Values cross the threshold but nothing emits} & Stage~2 requires
+the swing to last \textbf{≥ \texttt{swingMinMs} (180~ms)} and pass
+through the baseline in the opposite direction. Low‑FPS video (≤~15~FPS)
+can miss that window. & Reduce \texttt{swingMinMs} (e.g.~100~ms)
+\textbf{or} add a \texttt{swingMinFrames} check and allow either
+condition to trigger the gesture. \\
+\textbf{Opposite swing too small} & The head returns only partway to
+neutral so the second crossing never reaches the threshold. & Lower
+\texttt{pitchThresh}, shorten \texttt{swingMinMs}, or set
+\texttt{oppSwingRatio} (e.g.~\texttt{0.4}) so a partial return swing
+counts. \\
+\textbf{First nod after load is ignored} & The baseline uses the pose on
+the very first frame, so any initial tilt reduces the apparent movement
+of the first gesture. & Hold still for a moment -- the kiosk now
+auto‑calibrates after one second of steadiness -- or click
+\texttt{Calibrate} manually. \\
+\textbf{A few nods work, then nothing} & The adaptive baseline treats
+slow motion as ``still'' and gradually drifts toward the new pose.
+Future gestures then fall below the thresholds. & Increase
+\texttt{baselineTol} (e.g.~0.025) to ignore casual motion or shorten
+\texttt{baselineWindowMs} so baseline drift only occurs when truly
+still. \\
+\textbf{Shakes recognised but nods aren't (or vice versa)} & The
+\textbf{axis veto} (\texttt{axisVetoFactor\ =\ 0.8}) rejects nods if
+lateral motion is 80~\% of its threshold. Camera tilt mixes yaw into
+pitch, causing the veto. & Lower \texttt{axisVetoFactor} (e.g.~0.4) or
+level the camera. Using actual yaw/pitch angles instead of pixel deltas
+avoids this coupling. \\
+\end{longtable}
+
+\textbf{Landmark deltas read as zero} \textbar{} Landmarks
+234/454/10/152 have \texttt{visibility\ \textless{}\ minVis} (0.5) or
+sometimes return \texttt{undefined}. \textbar{} Lower \texttt{minVis} to
+0.3 and guard against \texttt{undefined}:
+\texttt{if\ (!lm{[}234{]}\ \textbar{}\textbar{}\ !lm{[}454{]})\ return;}
+\textbar{}

@@ -1,0 +1,234 @@
+\section{SecureMatch Kiosk}\label{securematch-kiosk}
+
+SecureMatch Kiosk is an interactive web-based application designed for
+public engagement through quizzes, gesture-based voting, and real-time
+feedback. It uses face detection, gesture classification, and WebSocket
+communication to create an engaging experience.
+
+\subsection{Features}\label{features}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Face Detection}: Detects multiple faces using MediaPipe's Face
+  Landmarker. See
+  \href{src/modules/multiFaceDetector.js}{\texttt{src/modules/multiFaceDetector.js}}.
+\item
+  \textbf{Gesture Classification}: Recognises vertical nods (``yes''),
+  horizontal shakes (``no''), and thumb gestures. The classifier adapts
+  to each user's neutral pose and accepts a nod whether you go
+  down-then-up or up-then-down. See
+  \href{src/modules/gestureClassifier.js}{\texttt{src/modules/gestureClassifier.js}}.
+\item
+  \textbf{Real-Time Voting}: Displays live vote tallies using Chart.js.
+  See
+  \href{src/modules/voteTally.js}{\texttt{src/modules/voteTally.js}}.
+\item
+  \textbf{Visual Feedback}: Faces briefly flash green for ``yes'' and
+  red for ``no'' using
+  \href{src/modules/overlayRenderer.js}{\texttt{src/modules/overlayRenderer.js}}.
+\item
+  \textbf{Question Rotation}: Cycles through questions with a countdown
+  timer. See
+  \href{src/modules/questionRotator.js}{\texttt{src/modules/questionRotator.js}}.
+\item
+  \textbf{WebSocket Communication}: Synchronizes votes and chat messages
+  across clients. See
+  \href{src/modules/chatClient.js}{\texttt{src/modules/chatClient.js}}
+  and \href{server/wsServer.js}{\texttt{server/wsServer.js}}.
+\item
+  \textbf{Robust Reconnects}: The client automatically reconnects with
+  exponential backoff if the WebSocket drops.
+\item
+  \textbf{Confetti Animation}: Celebratory confetti animation. See
+  \href{src/modules/confettiRenderer.js}{\texttt{src/modules/confettiRenderer.js}}.
+\item
+  \textbf{QR Code Generation}: Displays QR codes for further discussion
+  links. See
+  \href{src/modules/qrGenerator.js}{\texttt{src/modules/qrGenerator.js}}.
+\item
+  \textbf{Reset Button}: Clears the in-memory tallies and face state for
+  a new session.
+\item
+  \textbf{Calibrate Button}: Lets users set the neutral pose for
+  reliable detection.
+\item
+  \textbf{Scoreboard}: Shows current counts for Yes and No votes.
+\item
+  \textbf{Connection Status}: Shows whether the kiosk is connected to
+  the vote server.
+\end{itemize}
+
+\subsection{Project Structure}\label{project-structure}
+
+\subsubsection{Key Modules}\label{key-modules}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{\href{src/main.js}{\texttt{src/main.js}}}: Entry point for the
+  application. Initializes components and starts the main loop.
+\item
+  \textbf{\href{src/modules/multiFaceDetector.js}{\texttt{src/modules/multiFaceDetector.js}}}:
+  Handles face detection using MediaPipe.
+\item
+  \textbf{\href{src/modules/gestureClassifier.js}{\texttt{src/modules/gestureClassifier.js}}}:
+  Classifies gestures based on face landmarks.
+\item
+  \textbf{\href{src/modules/voteTally.js}{\texttt{src/modules/voteTally.js}}}:
+  Manages the vote tally chart.
+\item
+  \textbf{\href{src/modules/questionRotator.js}{\texttt{src/modules/questionRotator.js}}}:
+  Rotates questions and manages the countdown timer.
+\item
+  \textbf{\href{src/modules/chatClient.js}{\texttt{src/modules/chatClient.js}}}:
+  Handles WebSocket communication for votes and chat.
+\item
+  \textbf{\href{src/modules/confettiRenderer.js}{\texttt{src/modules/confettiRenderer.js}}}:
+  Displays confetti animations.
+\item
+  \textbf{\href{src/store.js}{\texttt{src/store.js}}}: Global state
+  management.
+\end{itemize}
+
+For a high-level overview of the data flow and WebSocket messages, see
+\url{docs/architecture.md}.
+
+\subsection{Setup and Installation}\label{setup-and-installation}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  Clone the repository:
+  \texttt{sh\ \ \ \ \ git\ clone\ \textless{}repository-url\textgreater{}\ \ \ \ \ cd\ securematch-kiosk}
+\item
+  Install dependencies (as defined in
+  \href{package.json}{\texttt{package.json}}):
+  \texttt{sh\ \ \ \ \ npm\ install}
+\item
+  Start the development server (uses
+  \href{vite.config.js}{\texttt{vite.config.js}}):
+  \texttt{sh\ \ \ \ \ npm\ run\ dev}
+\item
+  Start the WebSocket server (defined in \texttt{scripts} in
+  \href{package.json}{\texttt{package.json}}, runs
+  \href{server/wsServer.js}{\texttt{server/wsServer.js}}):
+  \texttt{sh\ \ \ \ \ npm\ run\ start:ws}
+\item
+  (Optional) Configure the WebSocket URL by creating a \texttt{.env}
+  file and setting \texttt{VITE\_WS\_URL}:
+  \texttt{VITE\_WS\_URL=ws://localhost:4000}
+\item
+  Open the application in your browser at \url{http://localhost:5173}
+  (port configured in \href{vite.config.js}{\texttt{vite.config.js}}).
+\end{enumerate}
+
+\subsection{Starting the Kiosk}\label{starting-the-kiosk}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  In one terminal, start the WebSocket server:
+  \texttt{sh\ \ \ \ \ npm\ run\ start:ws}
+\item
+  In a second terminal, launch the app:
+  \texttt{sh\ \ \ \ \ npm\ run\ dev}
+\item
+  Visit \url{http://localhost:5173} and step into the frame to begin.
+\end{enumerate}
+
+\subsection{Usage}\label{usage}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Step into the frame}: The attractor screen (defined in
+  \href{index.html}{\texttt{index.html}} and managed by
+  \href{src/modules/attractor.js}{\texttt{src/modules/attractor.js}})
+  will disappear once a face is detected by
+  \href{src/modules/camera.js}{\texttt{src/modules/camera.js}} and
+  \href{src/modules/multiFaceDetector.js}{\texttt{src/modules/multiFaceDetector.js}}.
+\item
+  \textbf{Answer questions}: Questions are displayed from
+  \href{src/modules/questionRotator.js}{\texttt{src/modules/questionRotator.js}}.
+  Use gestures to vote:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Nod \textbf{vertically} for ``yes''
+  \item
+    Shake your head \textbf{horizontally} for ``no''
+  \item
+    Thumbs up/down are also recognised Gestures are classified by
+    \href{src/modules/gestureClassifier.js}{\texttt{src/modules/gestureClassifier.js}}.
+    Votes are sent via
+    \href{src/modules/chatClient.js}{\texttt{src/modules/chatClient.js}}.
+    Faces flash green or red to confirm your choice.
+  \end{itemize}
+\item
+  \textbf{View results}: Live vote tallies are displayed on the chart
+  managed by
+  \href{src/modules/voteTally.js}{\texttt{src/modules/voteTally.js}}.
+\item
+  \textbf{Engage further}: Scan the QR code generated by
+  \href{src/modules/qrGenerator.js}{\texttt{src/modules/qrGenerator.js}}
+  for additional discussion links.
+\end{enumerate}
+
+\subsubsection{Custom Questions}\label{custom-questions}
+
+Edit \href{public/questions.json}{\texttt{public/questions.json}} to
+change the questions that appear in the kiosk.
+
+\subsection{Dependencies}\label{dependencies}
+
+\begin{itemize}
+\tightlist
+\item
+  \href{https://www.npmjs.com/package/@mediapipe/tasks-vision}{@mediapipe/tasks-vision}
+\item
+  \href{https://www.chartjs.org/}{chart.js}
+\item
+  \href{https://github.com/websockets/ws}{ws}
+\item
+  \href{https://vitejs.dev/}{vite}
+\end{itemize}
+
+(See \href{package.json}{\texttt{package.json}} for full list and
+versions)
+
+\subsection{Known Issues}\label{known-issues}
+
+\begin{itemize}
+\tightlist
+\item
+  Missing MediaPipe assets: Ensure the
+  \href{public/models/face_landmarker.task}{\texttt{face\_landmarker.task}}
+  and
+  \href{public/wasm/vision_wasm_internal.js}{\texttt{vision\_wasm\_internal.js}}
+  files are correctly placed in the \texttt{public/models} and
+  \texttt{public/wasm} directories, respectively. These are loaded by
+  \href{src/modules/multiFaceDetector.js}{\texttt{src/modules/multiFaceDetector.js}}.
+\end{itemize}
+
+For help diagnosing gesture problems, see \url{docs/troubleshooting.md}.
+
+\subsection{License}\label{license}
+
+This project is licensed under the terms of the \href{LICENSE}{MIT
+License}.
+
+\subsection{Acknowledgments}\label{acknowledgments}
+
+\begin{itemize}
+\tightlist
+\item
+  MediaPipe for face detection and gesture classification.
+\item
+  Chart.js for real-time chart rendering.
+\item
+  WebSocket for real-time communication.
+\end{itemize}

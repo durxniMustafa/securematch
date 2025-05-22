@@ -1,0 +1,108 @@
+\section{Architecture Overview}\label{architecture-overview}
+
+This document outlines how video data flows through the kiosk and how
+messages are exchanged with the WebSocket server. It also explains where
+to tweak common settings.
+
+\subsection{High-Level Flow}\label{high-level-flow}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Video capture} -- \texttt{camera.js} obtains a stream from the
+  user's webcam.
+\item
+  \textbf{Detection} -- frames are processed by
+  \texttt{multiFaceDetector.js} and \texttt{handDetector.js} to find
+  faces and hands.
+\item
+  \textbf{Gesture classification} -- detections are fed into
+  \texttt{gestureClassifier.js} (head nods/shakes) and
+  \texttt{handGestureClassifier.js} (thumb gestures).
+\item
+  \textbf{Vote dispatch} -- classified gestures trigger
+  \texttt{chatClient.js} to send \texttt{vote} messages over WebSocket
+  to \texttt{server/wsServer.js}.
+\item
+  \textbf{Tally display} -- the server broadcasts updates that
+  \texttt{voteTally.js} renders in real time.
+\end{enumerate}
+
+\subsection{WebSocket Message Formats}\label{websocket-message-formats}
+
+All messages are JSON objects with a \texttt{type} field.
+
+\subsubsection{\texorpdfstring{\texttt{vote}}{vote}}\label{vote}
+
+Sent by clients when a gesture is recognised.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{\{} \DataTypeTok{"type"}\FunctionTok{:} \StringTok{"vote"}\FunctionTok{,} \DataTypeTok{"gesture"}\FunctionTok{:} \StringTok{"yes"} \ErrorTok{|} \StringTok{"no"} \FunctionTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+The server increments the tally and broadcasts:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{\{} \DataTypeTok{"type"}\FunctionTok{:} \StringTok{"vote"}\FunctionTok{,} \DataTypeTok{"delta"}\FunctionTok{:} \FunctionTok{\{} \DataTypeTok{"yes"}\FunctionTok{:} \DecValTok{1} \FunctionTok{\}} \FunctionTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+(or \texttt{"no"} accordingly)
+
+\subsubsection{\texorpdfstring{\texttt{chat}}{chat}}\label{chat}
+
+Arbitrary chat messages can be sent using:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{\{} \DataTypeTok{"type"}\FunctionTok{:} \StringTok{"chat"}\FunctionTok{,} \DataTypeTok{"msg"}\FunctionTok{:} \StringTok{"Hello"} \FunctionTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+The server appends the text to its history and echoes the same object to
+all clients.
+
+\subsubsection{\texorpdfstring{\texttt{snapshot}}{snapshot}}\label{snapshot}
+
+When a client connects it receives the current state:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{\{} \DataTypeTok{"type"}\FunctionTok{:} \StringTok{"snapshot"}\FunctionTok{,} \DataTypeTok{"tally"}\FunctionTok{:} \FunctionTok{\{} \DataTypeTok{"yes"}\FunctionTok{:} \DecValTok{0}\FunctionTok{,} \DataTypeTok{"no"}\FunctionTok{:} \DecValTok{0} \FunctionTok{\},} \DataTypeTok{"chatHistory"}\FunctionTok{:} \OtherTok{[]} \FunctionTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Customisation}\label{customisation}
+
+\subsubsection{Editing the Question
+List}\label{editing-the-question-list}
+
+Questions are loaded from
+\href{../public/questions.json}{\texttt{public/questions.json}}. Edit
+this JSON file to change what appears in the kiosk.
+
+\subsubsection{Adjusting Gesture
+Thresholds}\label{adjusting-gesture-thresholds}
+
+The gesture classifier accepts threshold options.
+\href{../src/modules/mbp2020Defaults.js}{\texttt{src/modules/mbp2020Defaults.js}}
+provides a preset used in \href{../src/main.js}{\texttt{src/main.js}}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{faceClassifier }\OperatorTok{=} \FunctionTok{createClassifierMap}\NormalTok{(\{}
+    \DataTypeTok{deepDebug}\OperatorTok{:}\NormalTok{ DEEP\_DEBUG}\OperatorTok{,}
+    \OperatorTok{...}\NormalTok{mbp2020Defaults}\OperatorTok{,}
+    \DataTypeTok{pitchThresh}\OperatorTok{:} \FloatTok{0.18}\OperatorTok{,}    \CommentTok{// gentler nod threshold}
+\NormalTok{\})}\OperatorTok{;}
+\NormalTok{faceClassifier}\OperatorTok{.}\AttributeTok{config}\OperatorTok{.}\AttributeTok{swingMinMs} \OperatorTok{=} \DecValTok{250}\OperatorTok{;}  \CommentTok{// allow slower nods}
+\end{Highlighting}
+\end{Shaded}
+
+Tweaking values in \texttt{mbp2020Defaults.js}---such as
+\texttt{yawThresh} or \texttt{pitchThresh}---alters how sensitive nod
+and shake detection is.
