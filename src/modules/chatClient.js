@@ -1,6 +1,7 @@
-import { set, get } from '../store.js';
+import { set, get, appendLog } from '../store.js';
 
 let socket;
+let retryDelay = 1000;
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:4000';
 
 export function initChat() {
@@ -9,13 +10,17 @@ export function initChat() {
         set({ wsConnected: false });
         socket.addEventListener('open', () => {
             console.log('WS client connected');
+            appendLog('WS connected');
             set({ wsConnected: true });
+            retryDelay = 1000;
         });
         socket.addEventListener('message', handleMsg);
         socket.addEventListener('close', () => {
-            console.warn('WS client disconnected, retrying...');
+            console.warn('WS client disconnected, retrying in', retryDelay);
+            appendLog('WS disconnected');
             set({ wsConnected: false });
-            setTimeout(connect, 1000);
+            setTimeout(connect, retryDelay);
+            retryDelay = Math.min(retryDelay * 2, 10000);
         });
     }
 
@@ -25,6 +30,7 @@ export function initChat() {
         if (data.type === 'snapshot') {
             // load initial tallies
             set({ tally: data.tally });
+            appendLog('Received snapshot');
             // data.chatHistory...
         }
         else if (data.type === 'vote') {
@@ -33,10 +39,12 @@ export function initChat() {
                 updated[k] = (updated[k] || 0) + data.delta[k];
             }
             set({ tally: updated });
+            appendLog(`Vote update: ${JSON.stringify(data.delta)}`);
         }
         else if (data.type === 'chat') {
             // new chat message
             console.log('[CHAT]', data.msg);
+            appendLog(`Chat: ${data.msg}`);
         }
     }
 
