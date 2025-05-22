@@ -20,6 +20,7 @@ import {
     detectFaces,
 } from './modules/multiFaceDetector.js';
 import { createClassifierMap } from './modules/gestureClassifier.js';
+import { mbp2020Defaults } from './modules/mbp2020Defaults.js';
 
 /*****************************************************************
  *  3)  HAND
@@ -50,8 +51,19 @@ import './modules/healthMonitor.js'; // side-effects only
 let video, canvas;
 let faceDetector, faceClassifier;
 let handDetector, handClassifier;
-let lastFrameTime = performance.now();
+let fps = 30,
+    lastTs = performance.now();
 const lastVoteTime = { yes: 0, no: 0 };
+
+function updateFps(now) {
+    const dt = now - lastTs;
+    lastTs = now;
+    fps = fps * 0.9 + (1000 / dt) * 0.1;
+    set({ fps: Math.round(fps) });
+    if (faceClassifier) {
+        faceClassifier.config.swingMinMs = Math.max(120, 1.5 * 1000 / fps);
+    }
+}
 
 /* ────────────────────────────────────────────────────────────
    Quick on-screen YES / NO flash (debug only)
@@ -83,9 +95,8 @@ async function setup() {
     /* 2. detectors & classifiers */
     faceDetector = await loadFaceDetector();
     faceClassifier = createClassifierMap({
-        deepDebug: DEEP_DEBUG,
-        yawThresh: 0.05,
-        pitchThresh: 0.05
+        ...mbp2020Defaults,
+        deepDebug: DEEP_DEBUG
     });
 
     handDetector = await loadHandDetector();
@@ -97,7 +108,7 @@ async function setup() {
     initAttractor();
     startVoteMeter();
 
-    /* 4. reset button */
+    /* 4. controls */
     const resetBtn = document.getElementById('resetBtn');
     if (resetBtn) resetBtn.addEventListener('click', () => {
         faceClassifier.reset();
@@ -107,6 +118,9 @@ async function setup() {
         for (const k in lastFlash) delete lastFlash[k];
     });
 
+    const calibrateBtn = document.getElementById('calibrateBtn');
+    if (calibrateBtn) calibrateBtn.onclick = () => faceClassifier.calibrate();
+
     /* 5. enter main loop */
     requestAnimationFrame(tick);
 }
@@ -114,7 +128,8 @@ async function setup() {
 /* ────────────────────────────────────────────────────────────
    MAIN LOOP
    ──────────────────────────────────────────────────────────── */
-function tick() {
+function tick(now) {
+    updateFps(now);
     /* 1) run detectors */
     const faces = detectFaces(faceDetector, video);
     const hands = detectHands(handDetector, video);
@@ -140,9 +155,8 @@ function tick() {
     drawOverlays(faces, hands, canvas, lastFlash);
     pruneFlashes();
 
-    /* 6) FPS counter (debug sidebar) */
-    set({ fps: Math.round(1000 / (performance.now() - lastFrameTime)) });
-    lastFrameTime = performance.now();
+    const meter = document.getElementById('gestureMeter');
+    if (meter) meter.value = faceClassifier.getMeterValue();
 
     requestAnimationFrame(tick);
 }
