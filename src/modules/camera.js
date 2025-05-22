@@ -1,8 +1,14 @@
-export async function initCamera(width = 640, height = 480) {
-    const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width, height, facingMode: 'user' },
-        audio: false,
-    });
+export async function initCamera(width = 1280, height = 720) {
+    let stream;
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({
+            video: { width, height, facingMode: 'user' },
+            audio: false,
+        });
+    } catch (err) {
+        alert('Camera access denied or unavailable. Please enable the camera and reload.');
+        throw err;
+    }
 
     const wrap = document.createElement('div');
     wrap.style.position = 'relative';
@@ -17,13 +23,18 @@ export async function initCamera(width = 640, height = 480) {
     canvas.style.pointerEvents = 'none';
 
     video.srcObject = stream;
+    const [videoTrack] = stream.getVideoTracks();
     await video.play();
 
-    // fade video in
-    setTimeout(() => { wrap.style.opacity = 1; }, 500);
+    // fade video in when first frame arrives
+    if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
+        video.requestVideoFrameCallback(() => { wrap.style.opacity = 1; });
+    } else {
+        setTimeout(() => { wrap.style.opacity = 1; }, 500);
+    }
 
     wrap.append(video, canvas);
     document.body.append(wrap);
 
-    return { video, canvas };
+    return { video, canvas, videoTrack };
 }

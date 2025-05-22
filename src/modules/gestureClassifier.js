@@ -2,6 +2,8 @@
 // Head gesture classifier (nod = "yes", shake = "no") with adaptive baseline
 // and runtime-configurable thresholds.
 
+export const DEFAULT_THRESH_MBPRO = 0.06;
+
 export function createClassifierMap(options = {}) {
     const cfg = Object.assign({
         yawThresh: 0.1,
@@ -17,7 +19,8 @@ export function createClassifierMap(options = {}) {
         smoothFactor: 0.4,
         deepDebug: false,
         minVis: 0.5,
-        confidenceScale: 1.5,
+        // linear scaling factor for confidence computation
+        confidenceLinear: 1.5,
     }, options);
 
     const state = new Map();
@@ -132,7 +135,7 @@ export function createClassifierMap(options = {}) {
             if (s.stageYaw === 3) {
                 const maxPitch = Math.max(...s.buf.map(o => Math.abs(o.dpitch)));
                 if (maxPitch < cfg.pitchThresh * cfg.axisVetoFactor && now - s.lastEmit > cfg.debounceMs) {
-                    const conf = Math.min(1, s.maxYaw / (cfg.yawThresh * cfg.confidenceScale));
+                    const conf = Math.min(1, s.maxYaw / (cfg.yawThresh * cfg.confidenceLinear));
                     gestures.push({ id, gesture: 'no', confidence: conf });
                     s.lastEmit = now;
                 }
@@ -144,7 +147,7 @@ export function createClassifierMap(options = {}) {
             if (s.stagePitch === 3) {
                 const maxYaw = Math.max(...s.buf.map(o => Math.abs(o.dyaw)));
                 if (maxYaw < cfg.yawThresh * cfg.axisVetoFactor && now - s.lastEmit > cfg.debounceMs) {
-                    const conf = Math.min(1, s.maxPitch / (cfg.pitchThresh * cfg.confidenceScale));
+                    const conf = Math.min(1, s.maxPitch / (cfg.pitchThresh * cfg.confidenceLinear));
                     gestures.push({ id, gesture: 'yes', confidence: conf });
                     s.lastEmit = now;
                 }

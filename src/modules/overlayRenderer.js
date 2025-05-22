@@ -14,7 +14,7 @@ const HAND_CONNECTIONS = [
  * map correctly.
  */
 export function drawOverlays(faces, hands, canvas, flashes = {}) {
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas._ctx || (canvas._ctx = canvas.getContext('2d'));
 
     // Match the *source* video resolution, not the CSS size.
     // We assume video.videoWidth/Height are set.
@@ -32,6 +32,7 @@ export function drawOverlays(faces, hands, canvas, flashes = {}) {
 
     // --- FACE BOXES ---
     faces.forEach((lm, i) => {
+        if (!lm.length) return;
         const xs = lm.map(p => p.x);
         const ys = lm.map(p => p.y);
         const x = Math.min(...xs) * canvas.width;
@@ -53,16 +54,17 @@ export function drawOverlays(faces, hands, canvas, flashes = {}) {
 
     // --- HAND SKELETONS ---
     hands.forEach(lm => {
+        if (!lm.length) return;
         ctx.lineWidth = 2;
         ctx.strokeStyle = 'cyan';
+        const handPath = new Path2D();
         HAND_CONNECTIONS.forEach(([a, b]) => {
             const p = lm[a];
             const q = lm[b];
-            ctx.beginPath();
-            ctx.moveTo(p.x * canvas.width, p.y * canvas.height);
-            ctx.lineTo(q.x * canvas.width, q.y * canvas.height);
-            ctx.stroke();
+            handPath.moveTo(p.x * canvas.width, p.y * canvas.height);
+            handPath.lineTo(q.x * canvas.width, q.y * canvas.height);
         });
+        ctx.stroke(handPath);
         ctx.fillStyle = 'magenta';
         lm.forEach(p => {
             ctx.beginPath();

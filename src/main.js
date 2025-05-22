@@ -19,7 +19,7 @@ import {
     loadDetector as loadFaceDetector,
     detectFaces,
 } from './modules/multiFaceDetector.js';
-import { createClassifierMap } from './modules/gestureClassifier.js';
+import { createClassifierMap, DEFAULT_THRESH_MBPRO } from './modules/gestureClassifier.js';
 
 /*****************************************************************
  *  3)  HAND
@@ -66,7 +66,7 @@ function showGesture(g) {
 
 function registerVote(gesture) {
     const now = performance.now();
-    if (now - lastVoteTime[gesture] > 1000) {
+    if (now - lastVoteTime[gesture] > 800) {
         lastVoteTime[gesture] = now;
         sendVote(gesture);
         showGesture(gesture);
@@ -84,8 +84,8 @@ async function setup() {
     faceDetector = await loadFaceDetector();
     faceClassifier = createClassifierMap({
         deepDebug: DEEP_DEBUG,
-        yawThresh: 0.05,
-        pitchThresh: 0.05
+        yawThresh: DEFAULT_THRESH_MBPRO,
+        pitchThresh: DEFAULT_THRESH_MBPRO
     });
 
     handDetector = await loadHandDetector();
@@ -108,7 +108,7 @@ async function setup() {
     });
 
     /* 5. enter main loop */
-    requestAnimationFrame(tick);
+    scheduleTick();
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -117,7 +117,7 @@ async function setup() {
 function tick() {
     /* 1) run detectors */
     const faces = detectFaces(faceDetector, video);
-    const hands = detectHands(handDetector, video);
+    const hands = faces.length ? detectHands(handDetector, video) : [];
 
     /* 2) wake UI if somebody walks in */
     if (faces.length && get().mode === 'idle') set({ mode: 'active' });
@@ -137,14 +137,16 @@ function tick() {
     });
 
     /* 5) overlay rendering */
-    drawOverlays(faces, hands, canvas, lastFlash);
+    if (get().mode !== 'idle') {
+        drawOverlays(faces, hands, canvas, lastFlash);
+    }
     pruneFlashes();
 
     /* 6) FPS counter (debug sidebar) */
     set({ fps: Math.round(1000 / (performance.now() - lastFrameTime)) });
     lastFrameTime = performance.now();
 
-    requestAnimationFrame(tick);
+    scheduleTick();
 }
 
 /* helper used by overlayRenderer to briefly highlight a face box */
@@ -159,6 +161,15 @@ function pruneFlashes() {
         if (now - lastFlash[id].time > 500) {
             delete lastFlash[id];
         }
+    }
+}
+
+function scheduleTick() {
+    if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
+        video.requestVideoFrameCallback(() => tick());
+    } else {
+        requestAnimationFrame(tick);
+        setTimeout(tick, 33); // keep running when RAF pauses
     }
 }
 
