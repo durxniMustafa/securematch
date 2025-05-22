@@ -7,16 +7,22 @@ export async function initCamera(width = 1280, height = 720) {
         });
     } catch (err) {
         alert('Camera access denied or unavailable. Please enable the camera and reload.');
-        throw err;
+        console.error("Error accessing camera:", err); // Log error for debugging
+        throw err; // Re-throw the error for the caller to handle
     }
 
     const wrap = document.createElement('div');
+    wrap.className = 'camera-wrap'; // Added class for potential styling
     wrap.style.position = 'relative';
     wrap.style.display = 'inline-block';
     wrap.style.opacity = '0';
-    wrap.style.transition = 'opacity 1s';
+    wrap.style.transition = 'opacity 1s ease-in-out'; // Smoother transition
 
     const video = document.createElement('video');
+    video.setAttribute('playsinline', ''); // For iOS Safari and inline playback
+    video.setAttribute('autoplay', '');   // Ensure autoplay
+    video.setAttribute('muted', '');      // Mute audio to allow autoplay in most browsers
+
     const canvas = document.createElement('canvas');
     canvas.style.position = 'absolute';
     canvas.style.inset = '0';
