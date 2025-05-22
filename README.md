@@ -17,7 +17,6 @@ SecureMatch Kiosk is an interactive web-based application designed for public en
 - **Calibrate Button**: Lets users set the neutral pose for reliable detection.
 - **Scoreboard**: Shows current counts for Yes and No votes.
 - **Connection Status**: Shows whether the kiosk is connected to the vote server.
-- **Log Panel**: Displays WebSocket events, votes and head movement coordinates for debugging.
 
 ## Project Structure
 

@@ -10,14 +10,22 @@ export function initChat() {
         set({ wsConnected: false });
         socket.addEventListener('open', () => {
             console.log('WS client connected');
+
             appendLog('WS connected');
+
+            appendLog('WebSocket connected');
+
             set({ wsConnected: true });
             retryDelay = 1000;
         });
         socket.addEventListener('message', handleMsg);
         socket.addEventListener('close', () => {
             console.warn('WS client disconnected, retrying in', retryDelay);
+
             appendLog('WS disconnected');
+
+            appendLog(`WS disconnected; retrying in ${retryDelay / 1000}s`);
+
             set({ wsConnected: false });
             setTimeout(connect, retryDelay);
             retryDelay = Math.min(retryDelay * 2, 10000);
@@ -39,7 +47,11 @@ export function initChat() {
                 updated[k] = (updated[k] || 0) + data.delta[k];
             }
             set({ tally: updated });
+
             appendLog(`Vote update: ${JSON.stringify(data.delta)}`);
+
+            appendLog(`Vote update: yes=${updated.yes} no=${updated.no}`);
+
         }
         else if (data.type === 'chat') {
             // new chat message

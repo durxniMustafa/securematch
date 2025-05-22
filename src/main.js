@@ -35,7 +35,11 @@ import { createHandGestureClassifier } from './modules/handGestureClassifier.js'
  *  4)  UI  &  APP STATE
  *****************************************************************/
 import { drawOverlays } from './modules/overlayRenderer.js';
+
 import { set, get, subscribe, appendLog } from './store.js';
+
+import { set, get, appendLog } from './store.js';
+
 import {
     startVoteMeter,
     resetVoteMeter,
@@ -44,7 +48,11 @@ import { startQuestionCycle } from './modules/questionRotator.js';
 import { initChat, sendVote } from './modules/chatClient.js';
 import { initAttractor } from './modules/attractor.js';
 import './modules/healthMonitor.js'; // side-effects only
+
 import { initLogger } from './modules/logger.js';
+
+import './modules/logger.js'; // side-effects only
+
 
 /* ────────────────────────────────────────────────────────────
    Runtime references
@@ -55,8 +63,13 @@ let handDetector, handClassifier;
 let fps = 30,
     lastTs = performance.now();
 const lastVoteTime = { yes: 0, no: 0 };
+
 let lastYaw = 0,
     lastPitch = 0;
+
+let firstSeen = 0,
+    autoCalibrated = false;
+
 
 function updateFps(now) {
     const dt = now - lastTs;
@@ -85,7 +98,11 @@ function registerVote(gesture) {
         lastVoteTime[gesture] = now;
         sendVote(gesture);
         showGesture(gesture);
+
         appendLog(`Vote sent: ${gesture}`);
+
+        appendLog(`Gesture detected: ${gesture}`);
+
     }
 }
 
@@ -143,6 +160,7 @@ function tick(now) {
     const faces = detectFaces(faceDetector, video);
     const hands = faces.length ? detectHands(handDetector, video) : [];
 
+
     if (faces[0] && faces[0][234] && faces[0][454] && faces[0][10] && faces[0][152]) {
         const yaw = faces[0][234].x - faces[0][454].x;
         const pitch = faces[0][10].y - faces[0][152].y;
@@ -151,6 +169,17 @@ function tick(now) {
             lastPitch = pitch;
             appendLog(`yaw=${yaw.toFixed(3)} pitch=${pitch.toFixed(3)}`);
         }
+
+    if (faces.length) {
+        if (!firstSeen) firstSeen = performance.now();
+        if (!autoCalibrated && performance.now() - firstSeen > 1000) {
+            faceClassifier.calibrate();
+            appendLog('Auto calibrated');
+            autoCalibrated = true;
+        }
+    } else {
+        firstSeen = 0;
+        autoCalibrated = false;
     }
 
     /* 2) wake UI if somebody walks in */
