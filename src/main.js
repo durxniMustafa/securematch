@@ -104,10 +104,9 @@ function registerVote(gesture) {
         sendVote(gesture);
         showGesture(gesture);
 
-        appendLog(`Vote sent: ${gesture}`);
-
-        appendLog(`Gesture detected: ${gesture}`);
-
+        appendLog(`Gesture accepted: ${gesture}`);
+    } else {
+        appendLog(`Gesture ignored (cooldown): ${gesture}`);
     }
 }
 

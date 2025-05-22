@@ -14,6 +14,7 @@ export function createHandGestureClassifier() {
 
             hands.forEach((lm, i) => {
                 const diff = lm[4].y - lm[8].y; // thumb tip - index tip
+                const horiz = Math.abs(lm[4].x - lm[8].x);
 
                 let state = map.get(i);
                 if (!state) state = { buf: [], lastEmit: 0 };
@@ -28,10 +29,10 @@ export function createHandGestureClassifier() {
                 if (state.buf.length >= MIN_FRAMES) {
                     const avg = state.buf.reduce((s, b) => s + b.diff, 0) / state.buf.length;
                     const conf = Math.min(1, Math.abs(avg) / (THRESH * 2));
-                    if (avg < -THRESH && now - state.lastEmit > DEBOUNCE_MS) {
+                    if (horiz < 0.1 && avg < -THRESH && now - state.lastEmit > DEBOUNCE_MS) {
                         out.push({ id: i, gesture: 'thumbs_up', confidence: conf });
                         state.lastEmit = now;
-                    } else if (avg > THRESH && now - state.lastEmit > DEBOUNCE_MS) {
+                    } else if (horiz < 0.1 && avg > THRESH && now - state.lastEmit > DEBOUNCE_MS) {
                         out.push({ id: i, gesture: 'thumbs_down', confidence: conf });
                         state.lastEmit = now;
                     }
