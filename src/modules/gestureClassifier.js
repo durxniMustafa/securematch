@@ -71,7 +71,7 @@ export function createClassifierMap(options = {}) {
                     buf: [],
 
                     // --- velocity-FSM state ---
-                    nodState: 'idle', nodT0: 0,
+                    nodState: 'idle', nodT0: 0, nodDir: 0,
                     shakeSwinging: false, shakeDir: 0, shakeT0: 0,
                     yawBuf: [], pitchBuf: [],
                     prevYaw: yaw,
@@ -115,19 +115,22 @@ export function createClassifierMap(options = {}) {
 
             if (id === 0) meterValue = Math.abs(yawDot) / cfg.yVel;
 
-            /* ===== YES / NOD FSM (Down-then-Up) ===== */
+            /* ===== YES / NOD FSM (Symmetric) ===== */
             switch (s.nodState) {
               case 'idle':
-                // Look for a quick downward movement first
-                if (pitchDot < -cfg.pVel) {
-                  s.nodState = 'nod_started_down';
+                // Look for the initial swing in either direction
+                if (Math.abs(pitchDot) > cfg.pVel) {
+                  s.nodState = 'nod_started';
+                  s.nodDir = Math.sign(pitchDot);
                   s.nodT0 = now;
                 }
                 break;
 
-              case 'nod_started_down':
-                // Then look for a quick upward movement
-                if (pitchDot > cfg.pVel && now - s.nodT0 < cfg.nodWindowMs) {
+              case 'nod_started':
+                // Look for a strong swing in the opposite direction
+                if (((s.nodDir < 0 && pitchDot > cfg.pVel) ||
+                     (s.nodDir > 0 && pitchDot < -cfg.pVel)) &&
+                    now - s.nodT0 < cfg.nodWindowMs) {
                   if (avgAbsYaw < cfg.guardYaw && now - s.lastEmit > cfg.refractoryMs) {
                     const conf = Math.min(1, Math.abs(pitchDot) / cfg.pVel);
                     gestures.push({ id, gesture: 'yes', confidence: conf });
