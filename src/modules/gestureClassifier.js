@@ -36,6 +36,12 @@ export function createClassifierMap(options = {}) {
         guardYaw: 0.30,     // was 0.25; veto nod if yaw is large
         guardPitch: 0.30,   // was 0.30; veto shake if pitch is large
         refractoryMs: 1000,  // was 800; lock-out after detection
+        /**
+         * Number of frames to ignore velocity after emitting a gesture.
+         * This helps avoid double triggers when velocity briefly spikes
+         * during a real nod or shake.
+         */
+        velHoldFrames: 2,
 
     }, options, {
         /** final override: ensure logs appear */
@@ -114,6 +120,7 @@ export function createClassifierMap(options = {}) {
 
                     lastFrameTs: now,
                     lastEmit: 0,
+                    velHold: 0,
                     lastSeen: now,
                 };
                 state.set(id, s);
@@ -140,10 +147,16 @@ export function createClassifierMap(options = {}) {
             const dt = (nowMs - s.lastFrameTs) / 1000 || 0.033;
             s.lastFrameTs = nowMs;
 
-            const yawDot = (yaw - s.prevYawRaw) / dt;
-            const pitchDot = (pitch - s.prevPitchRaw) / dt;
+            let yawDot = (yaw - s.prevYawRaw) / dt;
+            let pitchDot = (pitch - s.prevPitchRaw) / dt;
             s.prevYawRaw = yaw;
             s.prevPitchRaw = pitch;
+
+            if (s.velHold > 0) {
+                s.velHold--;
+                yawDot = 0;
+                pitchDot = 0;
+            }
 
             // 5) deep debug logs for face 0
             if (cfg.deepDebug && id === 0) {
@@ -198,6 +211,7 @@ export function createClassifierMap(options = {}) {
                             const conf = Math.min(1, Math.abs(pitchDot) / cfg.pVel);
                             gestures.push({ id, gesture: 'yes', confidence: conf });
                             s.lastEmit = nowMs;
+                            s.velHold = cfg.velHoldFrames;
                         }
                         s.nodState = 'idle';
                     } else if (!enoughTime) {
@@ -231,6 +245,7 @@ export function createClassifierMap(options = {}) {
                         const conf = Math.min(1, Math.abs(yawDot) / cfg.yVel);
                         gestures.push({ id, gesture: 'no', confidence: conf });
                         s.lastEmit = nowMs;
+                        s.velHold = cfg.velHoldFrames;
                     }
                     s.shakeSwinging = false;
                 }
