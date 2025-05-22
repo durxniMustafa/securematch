@@ -30,6 +30,8 @@ SecureMatch Kiosk is an interactive web-based application designed for public en
 - **[`src/modules/confettiRenderer.js`](src/modules/confettiRenderer.js)**: Displays confetti animations.
 - **[`src/store.js`](src/store.js)**: Global state management.
 
+For a high-level overview of the data flow and WebSocket messages, see [docs/architecture.md](docs/architecture.md).
+
 ## Setup and Installation
 
 1.  Clone the repository:
