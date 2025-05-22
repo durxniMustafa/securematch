@@ -111,4 +111,18 @@ canvas {
     margin-bottom: 0.5rem;
     text-align: center;
 }
+
+#logPanel {
+    position: fixed;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    width: 260px;
+    max-height: 40vh;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    border-radius: 0.25rem;
+}
   

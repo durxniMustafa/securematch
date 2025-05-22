@@ -25,7 +25,12 @@ export const set = patch => {
 export const get = () => ({ ...state });
 
 export const appendLog = msg => {
+  state.logs.push(`[${new Date().toLocaleTimeString()}] ${msg}`);
+  if (state.logs.length > 100) state.logs.shift();
+  listeners.forEach(fn => fn(state));
+
   state.logs.push({ msg, time: Date.now() });
   if (state.logs.length > 50) state.logs.shift();
   set({ logs: state.logs });
+
 };
