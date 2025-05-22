@@ -4,11 +4,13 @@ body {
     font-family: 'Inter', system-ui, sans-serif;
     background: linear-gradient(135deg, #172554, #0e172a);
     color: white;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3); /* Added for better text readability */
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 1rem;
     min-height: 100vh;
+    margin: 0; /* Added to ensure no default body margin */
 }
 
 canvas {
@@ -17,6 +19,7 @@ canvas {
   
   .animate-pulse {
     animation: pulse 2s infinite;
+    transition: opacity 0.5s ease-in-out; /* Added for smoother transitions if opacity changes elsewhere */
   }
   
 @keyframes pulse {
@@ -24,23 +27,38 @@ canvas {
     50%      { opacity: 1; }
 }
 
-#resetBtn {
+#resetBtn, #calibrateBtn { /* Combined common styles */
     margin-top: 1rem;
-    padding: 0.5rem 1rem;
-    background-color: #333;
-    border: 1px solid #555;
-    border-radius: 0.25rem;
+    padding: 0.6rem 1.2rem; /* Slightly increased padding */
+    background-color: #2c3e50; /* Darker, more modern blue-gray */
+    border: none; /* Removed border for a flatter look */
+    border-radius: 0.35rem; /* Slightly more rounded */
     color: white;
+    cursor: pointer; /* Added cursor pointer */
+    transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, box-shadow 0.2s ease-in-out; /* Added transitions */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3); /* Added subtle shadow */
 }
 
+#resetBtn:hover, #calibrateBtn:hover {
+    background-color: #34495e; /* Slightly lighter on hover */
+    transform: translateY(-1px); /* Subtle lift effect */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4); /* Enhanced shadow on hover */
+}
+
+#resetBtn:active, #calibrateBtn:active {
+    transform: translateY(0px); /* Press effect */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+
 #calibrateBtn {
-    margin-top: 1rem;
+    /* margin-top: 1rem; */ /* Handled by combined style */
     margin-right: 0.5rem;
-    padding: 0.5rem 1rem;
-    background-color: #333;
-    border: 1px solid #555;
-    border-radius: 0.25rem;
-    color: white;
+    /* padding: 0.5rem 1rem; */ /* Handled by combined style */
+    /* background-color: #333; */ /* Handled by combined style */
+    /* border: 1px solid #555; */ /* Handled by combined style */
+    /* border-radius: 0.25rem; */ /* Handled by combined style */
+    /* color: white; */ /* Handled by combined style */
 }
 
 .controls {
@@ -51,37 +69,40 @@ canvas {
 #gestureMeter {
     position: fixed;
     bottom: 1rem;
-    right: 1rem;
+    right: 1rem; /* Adjusted from 1rem to align with log panel if it's on the right */
     width: 80px;
+    z-index: 10; /* Ensure it's above other elements if needed */
 }
 
 #wsStatus {
     position: fixed;
-    bottom: 10px;
-    left: 10px;
-    padding: 0.25rem 0.5rem;
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: 0.25rem;
-    font-size: 0.9rem;
+    bottom: 1rem; /* Adjusted for consistency */
+    left: 1rem; /* Adjusted for consistency */
+    padding: 0.35rem 0.7rem; /* Slightly adjusted padding */
+    background: rgba(0, 0, 0, 0.65); /* Slightly darker background */
+    border-radius: 0.35rem; /* Consistent border-radius */
+    font-size: 0.85rem; /* Slightly smaller font */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4); /* Added shadow */
+    z-index: 10;
 }
 
-#wsStatus.connected { color: limegreen; }
-#wsStatus.disconnected { color: tomato; }
+#wsStatus.connected { color: #2ecc71; } /* Brighter green */
+#wsStatus.disconnected { color: #e74c3c; } /* Brighter red */
 
 #scoreboard {
     display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
+    gap: 1.5rem; /* Increased gap */
+    margin-top: 1.5rem; /* Increased margin */
     font-weight: 600;
 }
 
 #scoreboard div {
-    background: rgba(0, 0, 0, 0.55);
-    padding: 0.35rem 0.9rem;
+    background: rgba(0, 0, 0, 0.6); /* Slightly darker */
+    padding: 0.5rem 1.1rem; /* Increased padding */
     border-radius: 0.5rem;
-    min-width: 80px;
+    min-width: 90px; /* Slightly wider */
     text-align: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    box-shadow: 0 3px 7px rgba(0,0,0,0.5); /* Enhanced shadow */
 }
 
 #logPanel div {
@@ -89,15 +110,16 @@ canvas {
 }
 
 #instructions {
-    max-width: 400px;
-    background: rgba(0, 0, 0, 0.3);
-    padding: 0.75rem;
-    border-radius: 0.25rem;
+    max-width: 450px; /* Slightly wider */
+    background: rgba(0, 0, 0, 0.4); /* Slightly darker */
+    padding: 1rem; /* Increased padding */
+    border-radius: 0.35rem; /* Consistent border-radius */
     font-size: 0.9rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3); /* Added shadow */
 }
 
 #instructions h2 {
-    font-size: 1.25rem;
+    font-size: 1.35rem; /* Slightly larger */
     font-weight: 600;
     margin-bottom: 0.5rem;
     text-align: center;
@@ -105,19 +127,41 @@ canvas {
 
 #logPanel {
     position: fixed;
-    bottom: 0.5rem;
-    right: 0.5rem;
-    width: 260px;
-    max-height: 40vh;
+    bottom: 1rem; /* Consistent spacing */
+    right: 1rem; /* Consistent spacing */
+    width: 280px; /* Slightly wider */
+    max-height: 35vh; /* Adjusted max-height */
     overflow-y: auto;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 0.5rem;
-    font-size: 0.75rem;
-    line-height: 1.2;
-    border-radius: 0.5rem;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.7); /* Darker background */
+    padding: 0.75rem; /* Increased padding */
+    font-size: 0.8rem; /* Slightly adjusted font size */
+    line-height: 1.3; /* Adjusted line height */
+    border-radius: 0.5rem; /* Consistent border-radius */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.6); /* Enhanced shadow */
     white-space: pre-wrap;
+    border: 1px solid rgba(255,255,255,0.1); /* Subtle border */
+    z-index: 5; /* Ensure it's above some elements but below modals/toasts */
 }
+
+/* Custom scrollbar for logPanel (Webkit browsers) */
+#logPanel::-webkit-scrollbar {
+    width: 8px;
+}
+
+#logPanel::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.2);
+    border-radius: 0.5rem;
+}
+
+#logPanel::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.3);
+    border-radius: 0.5rem;
+}
+
+#logPanel::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.5);
+}
+
 
 /* --- Calibrator UI --- */
 #calibBar {
@@ -149,24 +193,28 @@ canvas {
     bottom: 2rem;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0,0,0,0.6);
-    padding: 0.5rem 1rem;
-    border-radius: 0.25rem;
-    font-size: 0.9rem;
+    background: rgba(20,30,50,0.85); /* Darker, more theme-aligned background */
+    color: #f0f0f0; /* Lighter text color */
+    padding: 0.75rem 1.25rem; /* Increased padding */
+    border-radius: 0.35rem; /* Consistent border-radius */
+    font-size: 0.95rem; /* Slightly larger font */
     pointer-events: none;
     z-index: 1001;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5); /* Added shadow */
+    border: 1px solid rgba(255,255,255,0.1); /* Subtle border */
 }
 
 .dev-info {
     position: fixed;
-    top: 2rem;
+    top: 1rem; /* Adjusted position */
     left: 50%;
     transform: translateX(-50%);
-    font-size: 0.75rem;
-    background: rgba(0,0,0,0.5);
-    padding: 2px 4px;
-    border-radius: 0.25rem;
+    font-size: 0.8rem; /* Slightly adjusted font size */
+    background: rgba(0,0,0,0.6); /* Slightly darker background */
+    padding: 0.25rem 0.5rem; /* Adjusted padding */
+    border-radius: 0.35rem; /* Consistent border-radius */
     pointer-events: none;
     z-index: 1001;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4); /* Added shadow */
 }
-  
+
