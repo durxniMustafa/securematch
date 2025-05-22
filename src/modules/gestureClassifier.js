@@ -184,6 +184,7 @@ export function createClassifierMap(options = {}) {
 
     function reset() {
         state.clear();
+        publicState = '';
     }
 
     return {
