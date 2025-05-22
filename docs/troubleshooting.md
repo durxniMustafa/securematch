@@ -12,23 +12,3 @@ This guide explains why common gesture-recognition issues occur and how to resol
 | **Confidence always low (< 0.3)** | `confidence = amplitude / (threshold × confidenceScale)`. Lowering thresholds without adjusting `confidenceScale` reduces confidence. | Set `confidenceScale` ≈ 1.0 when you halve the thresholds. |
 | **Landmark deltas read as zero** | Landmarks 234/454/10/152 have `visibility < minVis` (0.5) or sometimes return `undefined`. | Lower `minVis` to 0.3 and guard against `undefined`: `if (!lm[234] || !lm[454]) return;` |
 
-## MacBook Pro 2020 quick setup
-
-Add runtime FPS tracking and adjust `swingMinMs` like this:
-
-```js
-let fps = 30, lastTs = performance.now();
-function tick(now) {
-  const dt = now - lastTs;  lastTs = now;
-  fps = fps * 0.9 + (1000 / dt) * 0.1;
-  clf.config.swingMinMs = Math.max(120, 1.5 * 1000 / fps);
-}
-```
-
-Instantiate the classifier with the defaults below and provide a manual **Calibrate** button so users can zero the baseline.
-
-```js
-import { mbp2020Defaults } from './modules/mbp2020Defaults.js';
-const clf = createClassifierMap({ ...mbp2020Defaults });
-```
-
