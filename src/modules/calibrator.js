@@ -1,7 +1,7 @@
 export function createCalibrator(options = {}) {
     const cfg = Object.assign({
-        stillThresh: 0.03,
-        stillFrames: 15,
+        stillThresh: 0.05,
+        stillFrames: 10,
         capFrames: 30,
     }, options);
 
@@ -10,11 +10,14 @@ export function createCalibrator(options = {}) {
     let stillCount = 0;
     let capCount = 0;
     let sumYaw = 0, sumPitch = 0;
+    let smoothYaw = 0, smoothPitch = 0;
     let active = false;
 
     function start(yaw = 0, pitch = 0) {
         baseYaw = yaw;
         basePitch = pitch;
+        smoothYaw = yaw;
+        smoothPitch = pitch;
         stillCount = 0;
         capCount = 0;
         sumYaw = 0;
@@ -29,23 +32,26 @@ export function createCalibrator(options = {}) {
         capCount = 0;
         sumYaw = 0;
         sumPitch = 0;
+        smoothYaw = 0;
+        smoothPitch = 0;
         active = false;
     }
 
     function update(yaw, pitch) {
+        smoothYaw += (yaw - smoothYaw) * 0.4;
+        smoothPitch += (pitch - smoothPitch) * 0.4;
+
+        const dy = smoothYaw - baseYaw;
+        const dp = smoothPitch - basePitch;
+        const dist = Math.abs(dy) + Math.abs(dp);
+        const moving = dist >= cfg.stillThresh;
+
         if (!active) {
-            const dy = yaw - baseYaw;
-            const dp = pitch - basePitch;
-            const dist = Math.hypot(dy, dp);
-            return { state, still: dist < cfg.stillThresh };
+            return { state, still: !moving };
         }
 
-        const dy = yaw - baseYaw;
-        const dp = pitch - basePitch;
-        const dist = Math.hypot(dy, dp);
-
         if (state === 'WAIT_STABLE') {
-            if (dist < cfg.stillThresh) {
+            if (!moving) {
                 stillCount++;
                 if (stillCount >= cfg.stillFrames) {
                     state = 'CAPTURING';
@@ -55,16 +61,16 @@ export function createCalibrator(options = {}) {
                 }
             } else {
                 stillCount = 0;
-                baseYaw = yaw;
-                basePitch = pitch;
+                baseYaw = smoothYaw;
+                basePitch = smoothPitch;
             }
-            return { state, progress: stillCount / cfg.stillFrames, still: dist < cfg.stillThresh };
+            return { state, progress: stillCount / cfg.stillFrames, still: !moving };
         }
 
         if (state === 'CAPTURING') {
-            if (dist < cfg.stillThresh) {
-                sumYaw += yaw;
-                sumPitch += pitch;
+            if (!moving) {
+                sumYaw += smoothYaw;
+                sumPitch += smoothPitch;
                 capCount++;
                 if (capCount >= cfg.capFrames) {
                     baseYaw = sumYaw / capCount;
@@ -74,12 +80,12 @@ export function createCalibrator(options = {}) {
                     return { state, baseline: { yaw: baseYaw, pitch: basePitch }, progress: 1, still: true };
                 }
             } else {
-                start(yaw, pitch);
+                start(smoothYaw, smoothPitch);
             }
-            return { state, progress: capCount / cfg.capFrames, still: dist < cfg.stillThresh };
+            return { state, progress: capCount / cfg.capFrames, still: !moving };
         }
 
-        return { state, baseline: { yaw: baseYaw, pitch: basePitch }, progress: 1, still: dist < cfg.stillThresh };
+        return { state, baseline: { yaw: baseYaw, pitch: basePitch }, progress: 1, still: !moving };
     }
 
     return {
