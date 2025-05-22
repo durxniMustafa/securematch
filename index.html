@@ -36,7 +36,11 @@
        ">
     YES
   </div>
-  <button id="resetBtn" class="reset">Reset</button>
+  <meter id="gestureMeter" min="0" max="1" value="0"></meter>
+  <div class="controls">
+    <button id="calibrateBtn" class="reset">Calibrate</button>
+    <button id="resetBtn" class="reset">Reset</button>
+  </div>
 
   <!-- QR code container -->
   <div id="qrContainer" class="hidden p-2 border-2 border-white rounded-md"></div>
@@ -50,6 +54,8 @@
       <li>Nod to vote <strong>Yes</strong>.</li>
       <li>Shake your head to vote <strong>No</strong>.</li>
       <li>Thumbs up or down works too.</li>
+      <li>Look straight at the camera and click <strong>Calibrate</strong>.</li>
+
     </ul>
   </section>
 

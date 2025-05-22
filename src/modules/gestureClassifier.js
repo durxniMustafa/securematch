@@ -21,6 +21,7 @@ export function createClassifierMap(options = {}) {
     }, options);
 
     const state = new Map();
+    let meterValue = 0;
 
     function prune(now) {
         for (const [id, s] of state) {
@@ -50,6 +51,9 @@ export function createClassifierMap(options = {}) {
             if (now - s.steadySince >= cfg.baselineWindowMs) {
                 s.baseline.yaw += (yaw - s.baseline.yaw) * cfg.baselineSmoothing;
                 s.baseline.pitch += (pitch - s.baseline.pitch) * cfg.baselineSmoothing;
+                const MAX_SHIFT = 0.04;
+                s.baseline.yaw = Math.max(s.smoothYaw - MAX_SHIFT, Math.min(s.smoothYaw + MAX_SHIFT, s.baseline.yaw));
+                s.baseline.pitch = Math.max(s.smoothPitch - MAX_SHIFT, Math.min(s.smoothPitch + MAX_SHIFT, s.baseline.pitch));
             }
         } else {
             s.steadySince = 0;
@@ -61,6 +65,7 @@ export function createClassifierMap(options = {}) {
         const gestures = [];
         state.forEach(s => { s._seen = false; });
 
+        meterValue = 0;
         faces.forEach((lm, id) => {
             let s = state.get(id);
             if (!s) {
@@ -94,6 +99,7 @@ export function createClassifierMap(options = {}) {
 
             const dyaw = s.smoothYaw - s.baseline.yaw;
             const dpitch = s.smoothPitch - s.baseline.pitch;
+            if (id === 0) meterValue = Math.abs(dyaw) / cfg.yawThresh;
             if (s.stageYaw > 0) s.maxYaw = Math.max(s.maxYaw, Math.abs(dyaw));
             if (s.stagePitch > 0) s.maxPitch = Math.max(s.maxPitch, Math.abs(dpitch));
             s.buf.push({ dyaw, dpitch, t: now });
@@ -171,5 +177,5 @@ export function createClassifierMap(options = {}) {
         state.clear();
     }
 
-    return { update, reset, calibrate, config: cfg };
+    return { update, reset, calibrate, config: cfg, getMeterValue: () => meterValue };
 }
