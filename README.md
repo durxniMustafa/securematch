@@ -94,6 +94,8 @@ SecureMatch Kiosk is an interactive web-based application designed for public en
 
 -   Missing MediaPipe assets: Ensure the [`face_landmarker.task`](public/models/face_landmarker.task) and [`vision_wasm_internal.js`](public/wasm/vision_wasm_internal.js) files are correctly placed in the `public/models` and `public/wasm` directories, respectively. These are loaded by [`src/modules/multiFaceDetector.js`](src/modules/multiFaceDetector.js).
 
+For help diagnosing gesture problems, see [docs/troubleshooting.md](docs/troubleshooting.md).
+
 ## License
 
 This project is private (as indicated in [`package.json`](package.json)). If you plan to distribute it, please add a `LICENSE` file.
@@ -102,4 +104,4 @@ This project is private (as indicated in [`package.json`](package.json)). If you
 
 -   MediaPipe for face detection and gesture classification.
 -   Chart.js for real-time chart rendering.
--   WebSocket for real-time communication.# securematch
+-   WebSocket for real-time communication.

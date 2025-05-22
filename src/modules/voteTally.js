@@ -12,6 +12,9 @@ export function startVoteMeter() {
     const canvas = document.getElementById('voteChart');
     if (!canvas) return;                     // nothing to do in headless tests
 
+    const board = document.getElementById('scoreboard');
+    if (board) board.classList.remove('hidden');
+
     canvas.classList.remove('hidden');
 
     chart = new Chart(canvas.getContext('2d'), {
@@ -49,6 +52,9 @@ export function stopVoteMeter() {
 
     const cv = document.getElementById('voteChart');
     if (cv) cv.classList.add('hidden');
+
+    const board = document.getElementById('scoreboard');
+    if (board) board.classList.add('hidden');
 }
 
 /* NEW — wipe both the chart and the stored counts */
@@ -61,6 +67,11 @@ export function resetVoteMeter() {
         chart.data.datasets[0].data = [0, 0];
         chart.update('none');
     }
+
+    const yesEl = document.getElementById('countYes');
+    const noEl = document.getElementById('countNo');
+    if (yesEl) yesEl.textContent = 0;
+    if (noEl) noEl.textContent = 0;
 }
 
 /* ——— internal ——— */
@@ -69,4 +80,9 @@ function updateChart() {
     const { tally } = get();
     chart.data.datasets[0].data = [tally.yes, tally.no];
     chart.update('none');
+
+    const yesEl = document.getElementById('countYes');
+    const noEl = document.getElementById('countNo');
+    if (yesEl) yesEl.textContent = tally.yes;
+    if (noEl) noEl.textContent = tally.no;
 }
