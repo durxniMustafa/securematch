@@ -19,7 +19,7 @@ import {
     loadDetector as loadFaceDetector,
     detectFaces,
 } from './modules/multiFaceDetector.js';
-import { createClassifierMap, DEFAULT_THRESH_MBPRO } from './modules/gestureClassifier.js';
+import { createClassifierMap } from './modules/gestureClassifier.js';
 import { mbp2020Defaults } from './modules/mbp2020Defaults.js';
 
 /*****************************************************************
@@ -61,6 +61,7 @@ let handDetector, handClassifier;
 let fps = 30,
     lastTs = performance.now();
 const lastVoteTime = { yes: 0, no: 0 };
+const COOLDOWN = 500; // minimum time between votes per gesture
 
 let lastYaw = 0,
     lastPitch = 0;
@@ -74,9 +75,6 @@ function updateFps(now) {
     lastTs = now;
     fps = fps * 0.9 + (1000 / dt) * 0.1;
     set({ fps: Math.round(fps) });
-    if (faceClassifier) {
-        faceClassifier.config.swingMinMs = Math.max(120, 1.5 * 1000 / fps);
-    }
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -92,7 +90,7 @@ function showGesture(g) {
 
 function registerVote(gesture) {
     const now = performance.now();
-    if (now - lastVoteTime[gesture] > 800) {
+    if (now - lastVoteTime[gesture] > COOLDOWN) {
         lastVoteTime[gesture] = now;
         sendVote(gesture);
         showGesture(gesture);
@@ -115,11 +113,10 @@ async function setup() {
     faceDetector = await loadFaceDetector();
     faceClassifier = createClassifierMap({
         deepDebug: DEEP_DEBUG,
-        yawThresh: DEFAULT_THRESH_MBPRO,
-        pitchThresh: DEFAULT_THRESH_MBPRO,
         ...mbp2020Defaults,
-        deepDebug: DEEP_DEBUG,
+        pitchThresh: 0.18,
     });
+    faceClassifier.config.swingMinMs = 250;
 
     handDetector = await loadHandDetector();
     handClassifier = createHandGestureClassifier();
@@ -186,6 +183,7 @@ function tick(now) {
 
     /* 3) head gestures → yes / no */
     faceClassifier.update(faces).forEach(({ id, gesture }) => {
+        appendLog(`FSM-state=${faceClassifier.state}  gesture=${gesture}`);
         flashBox(id, gesture);
         registerVote(gesture);
     });
