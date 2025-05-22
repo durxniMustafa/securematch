@@ -76,6 +76,7 @@ function getYawPitch(lm) {
 }
 
 let firstSeen = 0;
+let lostSince = 0;
 
 
 function updateFps(now) {
@@ -152,6 +153,14 @@ async function setup() {
     const calibrateBtn = document.getElementById('calibrateBtn');
     if (calibrateBtn) calibrateBtn.onclick = () => { pendingCalib = true; };
 
+    document.addEventListener('keydown', e => {
+        if (e.code === 'Space') {
+            registerVote('yes');
+        } else if (e.code === 'Backspace') {
+            registerVote('no');
+        }
+    });
+
     /* 5. enter main loop */
     scheduleTick();
 }
@@ -202,8 +211,14 @@ function tick(now) {
 
     if (faces.length) {
         if (!firstSeen) firstSeen = performance.now();
+        lostSince = 0;
     } else {
         firstSeen = 0;
+        if (!lostSince) lostSince = performance.now();
+        if (performance.now() - lostSince > 1000) {
+            calibUI?.showToast('Face lost — look at camera to resume.');
+            lostSince = performance.now();
+        }
     }
 
     /* 2) wake UI if somebody walks in */

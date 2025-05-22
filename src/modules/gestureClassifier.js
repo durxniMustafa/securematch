@@ -6,24 +6,21 @@ export const DEFAULT_THRESH_MBPRO = 0.06;
 
 export function createClassifierMap(options = {}) {
     const cfg = Object.assign({
-        yawThresh: 0.1,
-        pitchThresh: 0.1,
         bufferMs: 700,
         lostTimeoutMs: 1000,
-        swingMinMs: 180,
-        baselineTol: 0.015,
-        axisVetoFactor: 0.8,
-        baselineWindowMs: 1000,
-        baselineSmoothing: 0.05,
-        debounceMs: 250,
         smoothFactor: 0.4,
         deepDebug: false,
         minVis: 0.5,
-        // linear scaling factor for confidence computation
-        confidenceLinear: 1.5,
-        // minimum ratio of the second swing relative to the first
-        oppSwingRatio: 0.5,
-        yawGuard: 0.06,
+
+        /* --- velocity-FSM numbers --- */
+        pVel: 0.61,          // 35 °/s  (rad/s)  nod threshold
+        yVel: 0.52,          // 30 °/s            shake threshold
+        nodWindowMs: 600,    // max down→up
+        shakeWindowMs: 700,  // max left→right
+
+        guardYaw: 0.18,      // 10.3 °   static after calibration
+        guardPitch: 0.22,    // 12.6 °
+        refractoryMs: 600,   // lock-out after an emit
     }, options);
 
     const state = new Map();
@@ -50,8 +47,7 @@ export function createClassifierMap(options = {}) {
     }
 
     function adaptBaseline(s) {
-        s.baseline.yaw = 0.98 * s.baseline.yaw + 0.02 * s.smoothYaw;
-        s.baseline.pitch = 0.98 * s.baseline.pitch + 0.02 * s.smoothPitch;
+        /* baseline frozen after wizard */
     }
 
     function update(faces) {
@@ -73,10 +69,15 @@ export function createClassifierMap(options = {}) {
                     smoothYaw: yaw,
                     smoothPitch: pitch,
                     buf: [],
-                    pitchHist: [pitch],
-                    nodBuf: [],
-                    currentPitchThresh: cfg.pitchThresh,
-                    stageYaw: 0, tYaw1: 0, maxYaw: 0, yawDir: 0,
+
+                    // --- velocity-FSM state ---
+                    nodState: 'idle', nodT0: 0,
+                    shakeSwinging: false, shakeDir: 0, shakeT0: 0,
+                    yawBuf: [], pitchBuf: [],
+                    prevYaw: yaw,
+                    prevPitch: pitch,
+                    lastFrameTs: now,
+
                     lastEmit: 0,
                     lastSeen: now,
                 };
@@ -95,80 +96,67 @@ export function createClassifierMap(options = {}) {
 
             const dyaw = s.smoothYaw - s.baseline.yaw;
             const dpitch = s.smoothPitch - s.baseline.pitch;
-            if (id === 0) meterValue = Math.abs(dyaw) / cfg.yawThresh;
-            if (s.stageYaw > 0) s.maxYaw = Math.max(s.maxYaw, Math.abs(dyaw));
-            s.buf.push({ dyaw, dpitch, t: now });
-            while (s.buf[0] && now - s.buf[0].t > cfg.bufferMs) s.buf.shift();
 
-            adaptBaseline(s);
+            const dt = (now - s.lastFrameTs) / 1000 || 0.033;  // seconds
+            s.lastFrameTs = now;
 
-            s.pitchHist.push(s.smoothPitch);
-            if (s.pitchHist.length > 30) s.pitchHist.shift();
-            const meanPitch = s.pitchHist.reduce((a, b) => a + b, 0) / s.pitchHist.length;
-            const varPitch = s.pitchHist.reduce((a, b) => a + (b - meanPitch) * (b - meanPitch), 0) / s.pitchHist.length;
-            const sigma = Math.sqrt(varPitch);
-            const pitchThresh = Math.max(0.08, 3 * sigma);
-            s.currentPitchThresh = pitchThresh;
+            const yawDot   = (s.smoothYaw   - s.prevYaw)   / dt;
+            const pitchDot = (s.smoothPitch - s.prevPitch) / dt;
+            s.prevYaw   = s.smoothYaw;
+            s.prevPitch = s.smoothPitch;
 
-            s.nodBuf.push({ val: dpitch, t: now });
-            while (s.nodBuf[0] && now - s.nodBuf[0].t > 700) s.nodBuf.shift();
+            // rolling 10-frame mean abs yaw/pitch (for guard veto)
+            s.yawBuf.push(Math.abs(dyaw));
+            s.pitchBuf.push(Math.abs(dpitch));
+            if (s.yawBuf.length   > 10) s.yawBuf.shift();
+            if (s.pitchBuf.length > 10) s.pitchBuf.shift();
+            const avgAbsYaw   = s.yawBuf.reduce((a,b)=>a+b,0)/s.yawBuf.length;
+            const avgAbsPitch = s.pitchBuf.reduce((a,b)=>a+b,0)/s.pitchBuf.length;
 
-            if (Math.abs(dyaw) <= cfg.yawGuard) {
-                if (s.nodBuf.length) {
-                    let peak = s.nodBuf[0];
-                    let valley = s.nodBuf[0];
-                    for (const o of s.nodBuf) {
-                        if (o.val > peak.val) peak = o;
-                        if (o.val < valley.val) valley = o;
-                    }
-                    const delta = peak.val - valley.val;
-                    const dt = Math.abs(peak.t - valley.t);
-                    if (delta >= pitchThresh && dt <= 700 && now - s.lastEmit > cfg.debounceMs) {
-                        const conf = Math.min(1, delta / (pitchThresh * cfg.confidenceLinear));
-                        gestures.push({ id, gesture: 'yes', confidence: conf });
-                        s.lastEmit = now;
-                        s.nodBuf = [];
-                    }
-                }
-            } else {
-                s.nodBuf = [];
-            }
+            if (id === 0) meterValue = Math.abs(yawDot) / cfg.yVel;
 
-            if (cfg.deepDebug) {
-                console.debug(`face ${id} dy=${dyaw.toFixed(3)} dp=${dpitch.toFixed(3)}`);
-            }
+            /* ===== YES / NOD FSM ===== */
+            switch (s.nodState) {
+              case 'idle':
+                if (pitchDot > cfg.pVel) { s.nodState = 'down'; s.nodT0 = now; }
+                break;
 
-            if (s.stageYaw === 0 && Math.abs(dyaw) > cfg.yawThresh) {
-                s.stageYaw = 1;
-                s.yawDir = Math.sign(dyaw);
-                s.tYaw1 = now;
-                s.maxYaw = Math.abs(dyaw);
-            }
-            if (s.stageYaw === 1 && Math.sign(dyaw) === -s.yawDir && now - s.tYaw1 >= cfg.swingMinMs) {
-                const enough = Math.abs(dyaw) > cfg.yawThresh || Math.abs(dyaw) > s.maxYaw * cfg.oppSwingRatio;
-                if (enough) {
-                    s.stageYaw = 2;
-                    s.maxYaw = Math.max(s.maxYaw, Math.abs(dyaw));
-                }
-            }
-            if (s.stageYaw === 2 && Math.abs(dyaw) < cfg.baselineTol) { s.stageYaw = 3; }
-
-
-            if (s.stageYaw === 3) {
-                const maxPitch = Math.max(...s.buf.map(o => Math.abs(o.dpitch)));
-                if (maxPitch < s.currentPitchThresh * cfg.axisVetoFactor && now - s.lastEmit > cfg.debounceMs) {
-                    const conf = Math.min(1, s.maxYaw / (cfg.yawThresh * cfg.confidenceLinear));
-                    gestures.push({ id, gesture: 'no', confidence: conf });
+              case 'down':
+                if (pitchDot < -cfg.pVel && now - s.nodT0 < cfg.nodWindowMs) {
+                  if (avgAbsYaw < cfg.guardYaw && now - s.lastEmit > cfg.refractoryMs) {
+                    const conf = Math.min(1, Math.abs(pitchDot) / cfg.pVel);
+                    gestures.push({ id, gesture: 'yes', confidence: conf });
                     s.lastEmit = now;
+                  }
+                  s.nodState = 'idle';
+                } else if (now - s.nodT0 > cfg.nodWindowMs) {
+                  s.nodState = 'idle';             // timeout
                 }
-                s.stageYaw = 0;
-                s.yawDir = 0;
-                s.maxYaw = 0;
+                break;
             }
 
+            /* ===== NO / SHAKE FSM ===== */
+            if (!s.shakeSwinging && Math.abs(yawDot) > cfg.yVel) {
+              s.shakeSwinging = true;
+              s.shakeDir      = Math.sign(yawDot);
+              s.shakeT0       = now;
+            }
+            if (s.shakeSwinging) {
+              if (Math.sign(yawDot) === -s.shakeDir && Math.abs(yawDot) > cfg.yVel) {
+                if (now - s.shakeT0 < cfg.shakeWindowMs &&
+                    avgAbsPitch < cfg.guardPitch &&
+                    now - s.lastEmit > cfg.refractoryMs) {
+                  const conf = Math.min(1, Math.abs(yawDot) / cfg.yVel);
+                  gestures.push({ id, gesture: 'no', confidence: conf });
+                  s.lastEmit = now;
+                }
+                s.shakeSwinging = false;
+              }
+              if (now - s.shakeT0 > cfg.shakeWindowMs) s.shakeSwinging = false; // timeout
+            }
 
             if (id === 0) {
-                publicState = `Y${s.stageYaw}`;
+                publicState = s.nodState + (s.shakeSwinging ? 'S' : '');
             }
         });
 
