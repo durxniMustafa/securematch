@@ -1,4 +1,4 @@
-import { WebSocketServer } from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 const wss = new WebSocketServer({ port: PORT });
@@ -8,7 +8,7 @@ let chatHistory = [];
 function broadcast(obj) {
     const msg = JSON.stringify(obj);
     wss.clients.forEach(c => {
-        if (c.readyState === 1) c.send(msg);
+        if (c.readyState === WebSocket.OPEN) c.send(msg);
     });
 }
 
@@ -17,7 +17,13 @@ wss.on('connection', ws => {
     ws.send(JSON.stringify({ type: 'snapshot', tally, chatHistory }));
 
     ws.on('message', data => {
-        const obj = JSON.parse(data);
+        let obj;
+        try {
+            obj = JSON.parse(data);
+        } catch (err) {
+            console.error('Invalid JSON from client:', err);
+            return;
+        }
 
         if (obj.type === 'vote') {
             // Increment tally

@@ -21,6 +21,8 @@ export function createClassifierMap(options = {}) {
         minVis: 0.5,
         // linear scaling factor for confidence computation
         confidenceLinear: 1.5,
+        // minimum ratio of the second swing relative to the first
+        oppSwingRatio: 0.5,
     }, options);
 
     const state = new Map();
@@ -122,9 +124,12 @@ export function createClassifierMap(options = {}) {
                 s.tYaw1 = now;
                 s.maxYaw = Math.abs(dyaw);
             }
-            if (s.stageYaw === 1 && Math.sign(dyaw) === -s.yawDir && Math.abs(dyaw) > cfg.yawThresh && now - s.tYaw1 >= cfg.swingMinMs) {
-                s.stageYaw = 2;
-                s.maxYaw = Math.max(s.maxYaw, Math.abs(dyaw));
+            if (s.stageYaw === 1 && Math.sign(dyaw) === -s.yawDir && now - s.tYaw1 >= cfg.swingMinMs) {
+                const enough = Math.abs(dyaw) > cfg.yawThresh || Math.abs(dyaw) > s.maxYaw * cfg.oppSwingRatio;
+                if (enough) {
+                    s.stageYaw = 2;
+                    s.maxYaw = Math.max(s.maxYaw, Math.abs(dyaw));
+                }
             }
             if (s.stageYaw === 2 && Math.abs(dyaw) < cfg.baselineTol) { s.stageYaw = 3; }
 
@@ -134,9 +139,12 @@ export function createClassifierMap(options = {}) {
                 s.tPitch1 = now;
                 s.maxPitch = Math.abs(dpitch);
             }
-            if (s.stagePitch === 1 && Math.sign(dpitch) === -s.pitchDir && Math.abs(dpitch) > cfg.pitchThresh && now - s.tPitch1 >= cfg.swingMinMs) {
-                s.stagePitch = 2;
-                s.maxPitch = Math.max(s.maxPitch, Math.abs(dpitch));
+            if (s.stagePitch === 1 && Math.sign(dpitch) === -s.pitchDir && now - s.tPitch1 >= cfg.swingMinMs) {
+                const enough = Math.abs(dpitch) > cfg.pitchThresh || Math.abs(dpitch) > s.maxPitch * cfg.oppSwingRatio;
+                if (enough) {
+                    s.stagePitch = 2;
+                    s.maxPitch = Math.max(s.maxPitch, Math.abs(dpitch));
+                }
             }
             if (s.stagePitch === 2 && Math.abs(dpitch) < cfg.baselineTol) { s.stagePitch = 3; }
 
