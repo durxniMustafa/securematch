@@ -8,7 +8,7 @@ export function createClassifierMap(options = {}) {
     const cfg = Object.assign({
         yawThresh: 0.1,
         pitchThresh: 0.1,
-        bufferMs: 600,
+        bufferMs: 700,
         lostTimeoutMs: 1000,
         swingMinMs: 180,
         baselineTol: 0.015,
@@ -23,6 +23,7 @@ export function createClassifierMap(options = {}) {
         confidenceLinear: 1.5,
         // minimum ratio of the second swing relative to the first
         oppSwingRatio: 0.5,
+        yawGuard: 0.06,
     }, options);
 
     const state = new Map();
@@ -48,22 +49,9 @@ export function createClassifierMap(options = {}) {
         return { yaw, pitch };
     }
 
-    function adaptBaseline(s, yaw, pitch, now) {
-        const dy = yaw - s.baseline.yaw;
-        const dp = pitch - s.baseline.pitch;
-        const still = Math.abs(dy) < cfg.baselineTol && Math.abs(dp) < cfg.baselineTol;
-        if (still && s.stageYaw === 0 && s.stagePitch === 0) {
-            if (!s.steadySince) s.steadySince = now;
-            if (now - s.steadySince >= cfg.baselineWindowMs) {
-                s.baseline.yaw += (yaw - s.baseline.yaw) * cfg.baselineSmoothing;
-                s.baseline.pitch += (pitch - s.baseline.pitch) * cfg.baselineSmoothing;
-                const MAX_SHIFT = 0.04;
-                s.baseline.yaw = Math.max(s.smoothYaw - MAX_SHIFT, Math.min(s.smoothYaw + MAX_SHIFT, s.baseline.yaw));
-                s.baseline.pitch = Math.max(s.smoothPitch - MAX_SHIFT, Math.min(s.smoothPitch + MAX_SHIFT, s.baseline.pitch));
-            }
-        } else {
-            s.steadySince = 0;
-        }
+    function adaptBaseline(s) {
+        s.baseline.yaw = 0.98 * s.baseline.yaw + 0.02 * s.smoothYaw;
+        s.baseline.pitch = 0.98 * s.baseline.pitch + 0.02 * s.smoothPitch;
     }
 
     function update(faces) {
@@ -85,11 +73,12 @@ export function createClassifierMap(options = {}) {
                     smoothYaw: yaw,
                     smoothPitch: pitch,
                     buf: [],
+                    pitchHist: [pitch],
+                    nodBuf: [],
+                    currentPitchThresh: cfg.pitchThresh,
                     stageYaw: 0, tYaw1: 0, maxYaw: 0, yawDir: 0,
-                    stagePitch: 0, tPitch1: 0, maxPitch: 0, pitchDir: 0,
                     lastEmit: 0,
                     lastSeen: now,
-                    steadySince: 0,
                 };
                 state.set(id, s);
             }
@@ -108,11 +97,42 @@ export function createClassifierMap(options = {}) {
             const dpitch = s.smoothPitch - s.baseline.pitch;
             if (id === 0) meterValue = Math.abs(dyaw) / cfg.yawThresh;
             if (s.stageYaw > 0) s.maxYaw = Math.max(s.maxYaw, Math.abs(dyaw));
-            if (s.stagePitch > 0) s.maxPitch = Math.max(s.maxPitch, Math.abs(dpitch));
             s.buf.push({ dyaw, dpitch, t: now });
             while (s.buf[0] && now - s.buf[0].t > cfg.bufferMs) s.buf.shift();
 
-            adaptBaseline(s, s.smoothYaw, s.smoothPitch, now);
+            adaptBaseline(s);
+
+            s.pitchHist.push(s.smoothPitch);
+            if (s.pitchHist.length > 30) s.pitchHist.shift();
+            const meanPitch = s.pitchHist.reduce((a, b) => a + b, 0) / s.pitchHist.length;
+            const varPitch = s.pitchHist.reduce((a, b) => a + (b - meanPitch) * (b - meanPitch), 0) / s.pitchHist.length;
+            const sigma = Math.sqrt(varPitch);
+            const pitchThresh = Math.max(0.08, 3 * sigma);
+            s.currentPitchThresh = pitchThresh;
+
+            s.nodBuf.push({ val: dpitch, t: now });
+            while (s.nodBuf[0] && now - s.nodBuf[0].t > 700) s.nodBuf.shift();
+
+            if (Math.abs(dyaw) <= cfg.yawGuard) {
+                if (s.nodBuf.length) {
+                    let peak = s.nodBuf[0];
+                    let valley = s.nodBuf[0];
+                    for (const o of s.nodBuf) {
+                        if (o.val > peak.val) peak = o;
+                        if (o.val < valley.val) valley = o;
+                    }
+                    const delta = peak.val - valley.val;
+                    const dt = Math.abs(peak.t - valley.t);
+                    if (delta >= pitchThresh && dt <= 700 && now - s.lastEmit > cfg.debounceMs) {
+                        const conf = Math.min(1, delta / (pitchThresh * cfg.confidenceLinear));
+                        gestures.push({ id, gesture: 'yes', confidence: conf });
+                        s.lastEmit = now;
+                        s.nodBuf = [];
+                    }
+                }
+            } else {
+                s.nodBuf = [];
+            }
 
             if (cfg.deepDebug) {
                 console.debug(`face ${id} dy=${dyaw.toFixed(3)} dp=${dpitch.toFixed(3)}`);
@@ -133,24 +153,10 @@ export function createClassifierMap(options = {}) {
             }
             if (s.stageYaw === 2 && Math.abs(dyaw) < cfg.baselineTol) { s.stageYaw = 3; }
 
-            if (s.stagePitch === 0 && Math.abs(dpitch) > cfg.pitchThresh) {
-                s.stagePitch = 1;
-                s.pitchDir = Math.sign(dpitch);
-                s.tPitch1 = now;
-                s.maxPitch = Math.abs(dpitch);
-            }
-            if (s.stagePitch === 1 && Math.sign(dpitch) === -s.pitchDir && now - s.tPitch1 >= cfg.swingMinMs) {
-                const enough = Math.abs(dpitch) > cfg.pitchThresh || Math.abs(dpitch) > s.maxPitch * cfg.oppSwingRatio;
-                if (enough) {
-                    s.stagePitch = 2;
-                    s.maxPitch = Math.max(s.maxPitch, Math.abs(dpitch));
-                }
-            }
-            if (s.stagePitch === 2 && Math.abs(dpitch) < cfg.baselineTol) { s.stagePitch = 3; }
 
             if (s.stageYaw === 3) {
                 const maxPitch = Math.max(...s.buf.map(o => Math.abs(o.dpitch)));
-                if (maxPitch < cfg.pitchThresh * cfg.axisVetoFactor && now - s.lastEmit > cfg.debounceMs) {
+                if (maxPitch < s.currentPitchThresh * cfg.axisVetoFactor && now - s.lastEmit > cfg.debounceMs) {
                     const conf = Math.min(1, s.maxYaw / (cfg.yawThresh * cfg.confidenceLinear));
                     gestures.push({ id, gesture: 'no', confidence: conf });
                     s.lastEmit = now;
@@ -160,20 +166,9 @@ export function createClassifierMap(options = {}) {
                 s.maxYaw = 0;
             }
 
-            if (s.stagePitch === 3) {
-                const maxYaw = Math.max(...s.buf.map(o => Math.abs(o.dyaw)));
-                if (maxYaw < cfg.yawThresh * cfg.axisVetoFactor && now - s.lastEmit > cfg.debounceMs) {
-                    const conf = Math.min(1, s.maxPitch / (cfg.pitchThresh * cfg.confidenceLinear));
-                    gestures.push({ id, gesture: 'yes', confidence: conf });
-                    s.lastEmit = now;
-                }
-                s.stagePitch = 0;
-                s.pitchDir = 0;
-                s.maxPitch = 0;
-            }
 
             if (id === 0) {
-                publicState = `Y${s.stageYaw}P${s.stagePitch}`;
+                publicState = `Y${s.stageYaw}`;
             }
         });
 
