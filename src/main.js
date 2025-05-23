@@ -18,8 +18,9 @@ import {
     detectFaces
 } from './modules/multiFaceDetector.js';
 
-import { createClassifierMap } from './modules/gestureClassifier.js';
-import { mbp2020Defaults } from './modules/mbp2020Defaults.js';
+import { createGestureDetector } from './modules/gestureDetector.js';
+import { matrixToEuler } from './modules/poseUtils.js';
+import { GESTURE } from './modules/gestureConfig.js';
 import { createCalibrator } from './modules/calibrator.js';
 import { initCalibratorUI } from './modules/calibratorUI.js';
 
@@ -63,19 +64,12 @@ let lastTs = performance.now();
 const lastVoteTime = { yes: 0, no: 0 };
 const COOLDOWN = 500; // min time between votes per gesture
 
-function getYawPitch(lm) {
-    // Just logs raw landmarks for debugging
-    // e.g. see if [10].y changes as you move
-    if (DEEP_DEBUG && lm[10] && lm[152]) {
-        console.log(
-            'LM[10].y=', lm[10].y.toFixed(3),
-            'LM[152].y=', lm[152].y.toFixed(3)
-        );
+function getYawPitch(matrix) {
+    const { yaw, pitch } = matrixToEuler(matrix);
+    if (DEEP_DEBUG) {
+        console.log('yawDeg=', yaw.toFixed(2), 'pitchDeg=', pitch.toFixed(2));
     }
-    return {
-        yaw: lm[234].x - lm[454].x,
-        pitch: lm[10].y - lm[152].y
-    };
+    return { yaw, pitch };
 }
 
 let firstSeen = 0;
@@ -126,14 +120,8 @@ async function setup() {
     // 2) face + classifier
     faceDetector = await loadFaceDetector();
 
-    faceClassifier = createClassifierMap({
-        deepDebug: true,  // ensure console logs appear
-        ...mbp2020Defaults,
-        // pass real gates for nod/shake
-        pVel: 0.08,
-        yVel: 0.08,
-        pitchAmp: 0.025,
-        yawAmp: 0.025
+    faceClassifier = createGestureDetector({
+        ...GESTURE
     });
 
     // 3) hand
@@ -184,14 +172,17 @@ function tick(now) {
     updateFps(now);
 
     // 1) run face + hand detection
-    const faces = detectFaces(faceDetector, video);
+    const faceRes = detectFaces(faceDetector, video);
+    const faces = faceRes.faceLandmarks;
+    const matrices = faceRes.facialTransformationMatrixes;
     const hands = faces.length ? detectHands(handDetector, video) : [];
 
     // Attempt calibration or update calibrators
     faces.forEach((lm, id) => {
-        if (!lm[234] || !lm[454] || !lm[10] || !lm[152]) return; // skip partial faces
+        const mat = matrices[id];
+        if (!mat) return;
 
-        const { yaw, pitch } = getYawPitch(lm);
+        const { yaw, pitch } = getYawPitch(mat);
 
         let cal = calibrators.get(id);
         if (!cal) {
@@ -241,9 +232,8 @@ function tick(now) {
     if (faces.length && get().mode === 'idle') set({ mode: 'active' });
 
     // 3) classify head gestures → yes/no
-    faceClassifier.update(faces).forEach(({ id, gesture }) => {
+    faceClassifier.update(faceRes).forEach(({ id, gesture }) => {
         if (calibrators.get(id)?.state !== 'READY') return; // skip uncalibrated
-        appendLog(`FSM-state=${faceClassifier.state}  gesture=${gesture}`);
         registerVote(gesture);
     });
 
