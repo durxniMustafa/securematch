@@ -1,8 +1,10 @@
 export function initCalibratorUI() {
-    const bar = document.getElementById('calibBar');
-    const dot = document.getElementById('calibDot');
+    const overlay = document.getElementById('calibOverlay');
+    const ring = document.getElementById('calibProgress');
     const toastEl = document.getElementById('toast');
     const infoEl = document.getElementById('devInfo');
+    const textEl = document.getElementById('calibText');
+    const circumference = 352; // 2 * PI * r (r=56)
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     function beep() {
@@ -21,16 +23,28 @@ export function initCalibratorUI() {
     function showToast(msg) {
         if (!toastEl) return;
         toastEl.textContent = msg;
+        toastEl.style.opacity = '1';
         toastEl.style.display = 'block';
         setTimeout(() => {
-            toastEl.style.display = 'none';
-        }, 1500);
+            toastEl.style.opacity = '0';
+            setTimeout(() => {
+                toastEl.style.display = 'none';
+                toastEl.style.opacity = '1';
+            }, 300);
+        }, 1000);
     }
 
     return {
         update(progress, still) {
-            if (bar) bar.style.width = `${Math.round(progress * 100)}%`;
-            if (dot) dot.style.background = still ? 'limegreen' : 'red';
+            if (ring) {
+                ring.style.strokeDashoffset = circumference * (1 - progress);
+            }
+            if (overlay) {
+                overlay.classList.toggle('hidden', progress >= 1);
+            }
+            if (textEl) {
+                textEl.textContent = 'Bitte ruhig halten…';
+            }
         },
         showToast,
         beep,

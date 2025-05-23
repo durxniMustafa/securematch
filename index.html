@@ -7,19 +7,32 @@
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body class="bg-neutral-900 text-white flex flex-col items-center gap-4 min-h-screen p-4">
-  <div id="calibBar"><div id="calibDot"></div></div>
+  <div id="calibOverlay" class="calib-overlay hidden">
+    <svg id="calibRing" width="120" height="120">
+      <circle id="calibTrack" cx="60" cy="60" r="56"></circle>
+      <circle id="calibProgress" cx="60" cy="60" r="56"></circle>
+    </svg>
+    <div id="calibText" class="mt-2">Bitte ruhig halten…</div>
+  </div>
   <div id="toast" class="toast" style="display:none"></div>
   <div id="devInfo" class="dev-info" style="display:none"></div>
 
   <!-- Attractor -->
   <div id="attractor" class="animate-pulse flex flex-col items-center gap-4 text-center">
+    <div id="startCircle" class="start-circle"></div>
     <img src="/img/shield.svg" class="w-24 h-24" />
-    <h1 class="text-3xl font-bold">Public Security Quiz</h1>
-    <p class="text-sm opacity-80">Step into the frame to begin</p>
+    <h1 class="text-3xl font-bold">Schau in die Kamera &amp; nicke, um zu starten</h1>
+    <p class="text-sm opacity-80">Datenschutz-Hinweis</p>
   </div>
 
   <!-- Question + countdown -->
-  <h1 id="q" class="hidden text-2xl font-semibold text-center"></h1>
+  <div id="questionCard" class="hidden question-card relative flex flex-col items-center gap-2">
+    <svg id="timerRing" class="timer-ring" width="140" height="140">
+      <circle cx="70" cy="70" r="64" />
+    </svg>
+    <h1 id="q" class="text-2xl font-semibold text-center"></h1>
+    <p class="text-sm opacity-80">Nicken = Ja | Kopf schütteln = Nein</p>
+  </div>
   <div id="clock" class="hidden text-lg text-center"></div>
 
   <!-- Live vote chart -->
@@ -28,6 +41,12 @@
   <div id="scoreboard" class="hidden flex gap-6 text-xl font-semibold mt-2">
     <div>Yes: <span id="countYes">0</span></div>
     <div>No: <span id="countNo">0</span></div>
+  </div>
+
+  <!-- Vote feedback overlay -->
+  <div id="voteFeedback" class="vote-feedback hidden flex flex-col items-center">
+    <div id="voteIcon" class="text-6xl">👍</div>
+    <div class="text-lg mt-2">Deine Stimme wurde gezählt</div>
   </div>
 
   <!-- On‐screen YES/NO debug indicator -->
