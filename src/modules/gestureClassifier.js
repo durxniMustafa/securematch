@@ -2,6 +2,9 @@
 // Head gesture classifier (nod="yes", shake="no") with a velocity-based FSM
 // for subtle 0–1 scale face landmarks. Baseline is frozen after calibration.
 
+import { gestureConfig } from './gestureConfig.js';
+import { createOneEuroFilter } from './oneEuro.js';
+
 export const DEFAULT_THRESH_MBPRO = 0.06;
 
 /**
@@ -14,37 +17,7 @@ export const DEFAULT_THRESH_MBPRO = 0.06;
  *  - For debugging, set deepDebug: true and watch the console logs.
  */
 export function createClassifierMap(options = {}) {
-    const cfg = Object.assign({
-        // Basic configuration
-        bufferMs: 700,
-        lostTimeoutMs: 1000,
-        smoothFactor: 0.3,   // we lowered from 0.4 for less smoothing
-        minVis: 0.25,        // only used if you do check .visibility
-
-        /**
-         * Less sensitive thresholds to avoid
-         * detecting small bobs or micro-shakes:
-         */
-        pVel: 0.30,     // was 0.25; now needs ~10–12 deg/s in 0–1 coords
-        yVel: 0.25,     // was 0.25
-        pitchAmp: 0.10, // was 0.07, then 0.06
-        yawAmp: 0.06,  // was 0.06
-
-        nodWindowMs: 600,  // time from down→up
-        shakeWindowMs: 700, // time for 2 swings
-
-        guardYaw: 0.30,     // was 0.25; veto nod if yaw is large
-        guardPitch: 0.30,   // was 0.30; veto shake if pitch is large
-        refractoryMs: 1000,  // was 800; lock-out after detection
-        /**
-         * Number of frames to ignore velocity after emitting a gesture.
-         * This helps avoid double triggers when velocity briefly spikes
-         * during a real nod or shake.
-         */
-        velHoldFrames: 3, // was 2
-        MAX_VEL: 2.0, // Max velocity cap
-
-    }, options, {
+    const cfg = Object.assign({}, gestureConfig, options, {
         /** final override: ensure logs appear */
         deepDebug: true
 
@@ -53,6 +26,7 @@ export function createClassifierMap(options = {}) {
     const state = new Map();  // ID -> per-face state
     let meterValue = 0;
     let publicState = '';
+    let debugVals = { yawDot: 0, pitchDot: 0 };
 
     function prune(now) {
         // remove stale face states after lostTimeoutMs
@@ -63,20 +37,48 @@ export function createClassifierMap(options = {}) {
         }
     }
 
-    /**
-     * Unconditional yaw/pitch; if a landmark is missing,
-     * fallback to prev.
-     */
-    function getYawPitch(lm, prevYaw, prevPitch) {
-        const yaw =
-            (lm[234] && lm[454]) ? (lm[234].x - lm[454].x) : prevYaw;
-        const pitch =
-            (lm[10] && lm[152]) ? (lm[10].y - lm[152].y) : prevPitch;
-        return { yaw, pitch };
+    /** Basic vector helpers for 3-D pose */
+    function vsub(a, b) { return { x: a.x - b.x, y: a.y - b.y, z: (a.z || 0) - (b.z || 0) }; }
+    function cross(a, b) { return { x: a.y*b.z - a.z*b.y, y: a.z*b.x - a.x*b.z, z: a.x*b.y - a.y*b.x }; }
+    function normalize(v) {
+        const len = Math.hypot(v.x, v.y, v.z || 0) || 1;
+        return { x: v.x/len, y: v.y/len, z: (v.z||0)/len };
     }
 
-    /** We do not adapt the baseline; calibrate() is explicit. */
-    function adaptBaseline() { /* no-op */ }
+    /**
+     * Solve a crude 3-D head pose from a handful of rigid landmarks.
+     * Returns yaw, pitch and roll in radians.
+     */
+    function computePose(lm, prev) {
+        const left = lm[234], right = lm[454];
+        const top = lm[10], bottom = lm[152];
+        if (!left || !right || !top || !bottom) return prev;
+
+        let xAxis = normalize(vsub(right, left));
+        let yAxis = normalize(vsub(top, bottom));
+        let zAxis = normalize(cross(xAxis, yAxis));
+        yAxis = normalize(cross(zAxis, xAxis));
+
+        const R = [
+            [xAxis.x, yAxis.x, zAxis.x],
+            [xAxis.y, yAxis.y, zAxis.y],
+            [xAxis.z, yAxis.z, zAxis.z]
+        ];
+        const yaw = Math.atan2(R[0][2], R[2][2]);
+        const pitch = Math.asin(-R[1][2]);
+        const roll = Math.atan2(R[1][0], R[1][1]);
+        return { yaw, pitch, roll };
+    }
+
+    /**
+     * Slowly adapt the baseline when no gesture is in progress
+     * to compensate for posture drift.
+     */
+    function adaptBaseline(s, dt) {
+        const k = cfg.baselineBlendK;
+        s.baseline.yaw += (s.smoothYaw - s.baseline.yaw) * k * dt;
+        s.baseline.pitch += (s.smoothPitch - s.baseline.pitch) * k * dt;
+    }
 
     /**
      * Main update function: call each frame with an array of face landmarks.
@@ -103,6 +105,8 @@ export function createClassifierMap(options = {}) {
                     lastPitch: pitch,
                     smoothYaw: yaw,
                     smoothPitch: pitch,
+                    yawFilter: createOneEuroFilter({ minCutoff: 1.0, beta: 0.005 }),
+                    pitchFilter: createOneEuroFilter({ minCutoff: 1.0, beta: 0.005 }),
 
                     // velocity-FSM
                     nodState: 'idle',
@@ -118,8 +122,8 @@ export function createClassifierMap(options = {}) {
                     pitchBuf: [],
 
                     // store angles used for raw velocity
-                    prevYawRaw: yaw,
-                    prevPitchRaw: pitch,
+                    prevYawFiltered: yaw,
+                    prevPitchFiltered: pitch,
 
                     lastFrameTs: now,
                     lastEmit: 0,
@@ -132,28 +136,33 @@ export function createClassifierMap(options = {}) {
             s._seen = true;
             s.lastSeen = now;
 
-            // 1) get raw yaw/pitch
-            const { yaw, pitch } = getYawPitch(lm, s.lastYaw, s.lastPitch);
+            // 1) compute full head pose (yaw, pitch, roll)
+            const nowMs = performance.now();
+            const pose = computePose(lm, { yaw: s.lastYaw, pitch: s.lastPitch, roll: s.lastRoll || 0 });
+            const yaw = pose.yaw;
+            const pitch = pose.pitch;
             s.lastYaw = yaw;
             s.lastPitch = pitch;
+            s.lastRoll = pose.roll;
 
-            // 2) smoothing for amplitude checks
-            s.smoothYaw += (yaw - s.smoothYaw) * cfg.smoothFactor;
-            s.smoothPitch += (pitch - s.smoothPitch) * cfg.smoothFactor;
+            // 2) one-euro filtering for stability
+            const fYaw = s.yawFilter.update(yaw, nowMs);
+            const fPitch = s.pitchFilter.update(pitch, nowMs);
+            s.smoothYaw = fYaw;
+            s.smoothPitch = fPitch;
 
             // 3) compute relative to baseline for amplitude
-            const dyaw = s.smoothYaw - s.baseline.yaw;
-            const dpitch = s.smoothPitch - s.baseline.pitch;
+            const dyaw = fYaw - s.baseline.yaw;
+            const dpitch = fPitch - s.baseline.pitch;
 
-            // 4) raw velocity
-            const nowMs = performance.now();
+            // 4) velocity from filtered angles
             const dt = (nowMs - s.lastFrameTs) / 1000 || 0.033;
             s.lastFrameTs = nowMs;
 
-            let yawDot = (yaw - s.prevYawRaw) / dt;
-            let pitchDot = (pitch - s.prevPitchRaw) / dt;
-            s.prevYawRaw = yaw;
-            s.prevPitchRaw = pitch;
+            let yawDot = (fYaw - s.prevYawFiltered) / dt;
+            let pitchDot = (fPitch - s.prevPitchFiltered) / dt;
+            s.prevYawFiltered = fYaw;
+            s.prevPitchFiltered = fPitch;
 
             // Cap velocity (Fix 3)
             yawDot = Math.min(cfg.MAX_VEL, Math.max(-cfg.MAX_VEL, yawDot));
@@ -176,6 +185,8 @@ export function createClassifierMap(options = {}) {
                     'yawDot=', yawDot.toFixed(3),
                     'pitchDot=', pitchDot.toFixed(3)
                 );
+                debugVals.yawDot = yawDot;
+                debugVals.pitchDot = pitchDot;
             }
 
             // 6) rolling average for guard veto
@@ -194,8 +205,8 @@ export function createClassifierMap(options = {}) {
                ---------------------------------------------------------------*/
             switch (s.nodState) {
                 case 'idle':
-                    // Wait for pitch velocity big enough
-                    if (Math.abs(pitchDot) > cfg.pVel) {
+                    // Require both velocity and amplitude gate
+                    if (Math.abs(pitchDot) > cfg.pVel && Math.abs(dpitch) > cfg.pitchAmp) {
                         s.nodState = 'nod_started';
                         s.nodDir = Math.sign(pitchDot);
                         s.nodT0 = nowMs;
@@ -244,7 +255,7 @@ export function createClassifierMap(options = {}) {
             /* ---------------------------------------------------------------
                NO (shake) FSM
                ---------------------------------------------------------------*/
-            if (!s.shakeSwinging && Math.abs(yawDot) > cfg.yVel) {
+            if (!s.shakeSwinging && Math.abs(yawDot) > cfg.yVel && Math.abs(dyaw) > cfg.yawAmp) {
                 s.shakeSwinging = true;
                 s.shakeDir = Math.sign(yawDot);
                 s.shakeT0 = nowMs;
@@ -272,6 +283,13 @@ export function createClassifierMap(options = {}) {
                 if (nowMs - s.shakeT0 > cfg.shakeWindowMs) {
                     s.shakeSwinging = false; // timed out
                 }
+            }
+
+            // adapt baseline slowly when idle
+            if (s.nodState === 'idle' && !s.shakeSwinging &&
+                Math.abs(yawDot) < cfg.yVel * 0.1 &&
+                Math.abs(pitchDot) < cfg.pVel * 0.1) {
+                adaptBaseline(s, dt);
             }
 
             // For debugging display
@@ -325,5 +343,6 @@ export function createClassifierMap(options = {}) {
 
         /* Debug info: e.g. "nod_startedS" => nod FSM=nod_started, shakeFSM=swinging */
         get state() { return publicState; },
+        get debug() { return debugVals; },
     };
 }

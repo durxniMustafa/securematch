@@ -36,6 +36,7 @@ import { createHandGestureClassifier } from './modules/handGestureClassifier.js'
  *  4) UI & APP STATE
  *****************************************************************/
 import { drawOverlays } from './modules/overlayRenderer.js';
+import { createDebugOverlay } from './modules/debugOverlay.js';
 import { set, get, subscribe, appendLog } from './store.js';
 import {
     startVoteMeter,
@@ -55,6 +56,7 @@ let faceDetector, faceClassifier;
 let handDetector, handClassifier;
 const calibrators = new Map();
 let calibUI;
+let debugOverlay;
 
 let pendingCalib = false;
 let fps = 30;
@@ -173,6 +175,11 @@ async function setup() {
         }
     });
 
+    const dbgCanvas = document.getElementById('debugCanvas');
+    if (dbgCanvas) {
+        debugOverlay = createDebugOverlay(dbgCanvas);
+    }
+
     // 6) go
     scheduleTick();
 }
@@ -263,6 +270,11 @@ function tick(now) {
 
     const meter = document.getElementById('gestureMeter');
     if (meter) meter.value = faceClassifier.getMeterValue();
+
+    if (debugOverlay) {
+        const dbg = faceClassifier.debug;
+        debugOverlay.update(dbg.yawDot, dbg.pitchDot, faceClassifier.state, faceClassifier.config);
+    }
 
     scheduleTick();
 }
