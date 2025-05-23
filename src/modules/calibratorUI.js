@@ -21,10 +21,15 @@ export function initCalibratorUI() {
     function showToast(msg) {
         if (!toastEl) return;
         toastEl.textContent = msg;
+        toastEl.style.opacity = '1';
         toastEl.style.display = 'block';
         setTimeout(() => {
-            toastEl.style.display = 'none';
-        }, 1500);
+            toastEl.style.opacity = '0';
+            setTimeout(() => {
+                toastEl.style.display = 'none';
+                toastEl.style.opacity = '1';
+            }, 300);
+        }, 1000);
     }
 
     return {
