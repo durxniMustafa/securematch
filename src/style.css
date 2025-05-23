@@ -1,10 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 
 body {
-    font-family: 'Inter', system-ui, sans-serif;
-    background: linear-gradient(135deg, #172554, #0e172a);
-    color: white;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.3); /* Added for better text readability */
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI',
+        'Helvetica Neue', Arial, sans-serif;
+    background: linear-gradient(135deg, #f2f2f7, #e0e0e5);
+    color: #1c1c1e;
+    text-shadow: none;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -29,25 +30,27 @@ canvas {
 
 #resetBtn, #calibrateBtn { /* Combined common styles */
     margin-top: 1rem;
-    padding: 0.6rem 1.2rem; /* Slightly increased padding */
-    background-color: #2c3e50; /* Darker, more modern blue-gray */
-    border: none; /* Removed border for a flatter look */
-    border-radius: 0.35rem; /* Slightly more rounded */
-    color: white;
-    cursor: pointer; /* Added cursor pointer */
-    transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, box-shadow 0.2s ease-in-out; /* Added transitions */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3); /* Added subtle shadow */
+    padding: 0.6rem 1.4rem;
+    background-color: #007aff; /* Apple blue */
+    border: none;
+    border-radius: 0.5rem;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out,
+                transform 0.1s ease-in-out,
+                box-shadow 0.2s ease-in-out;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 #resetBtn:hover, #calibrateBtn:hover {
-    background-color: #34495e; /* Slightly lighter on hover */
-    transform: translateY(-1px); /* Subtle lift effect */
-    box-shadow: 0 4px 8px rgba(0,0,0,0.4); /* Enhanced shadow on hover */
+    background-color: #3390ff;
 }
 
 #resetBtn:active, #calibrateBtn:active {
-    transform: translateY(0px); /* Press effect */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    background-color: #0063cc;
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 
@@ -76,18 +79,19 @@ canvas {
 
 #wsStatus {
     position: fixed;
-    bottom: 1rem; /* Adjusted for consistency */
-    left: 1rem; /* Adjusted for consistency */
-    padding: 0.35rem 0.7rem; /* Slightly adjusted padding */
-    background: rgba(0, 0, 0, 0.65); /* Slightly darker background */
-    border-radius: 0.35rem; /* Consistent border-radius */
-    font-size: 0.85rem; /* Slightly smaller font */
-    box-shadow: 0 1px 3px rgba(0,0,0,0.4); /* Added shadow */
+    bottom: 1rem;
+    left: 1rem;
+    padding: 0.35rem 0.7rem;
+    background: rgba(255, 255, 255, 0.8);
+    color: #1c1c1e;
+    border-radius: 0.4rem;
+    font-size: 0.85rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     z-index: 10;
 }
 
-#wsStatus.connected { color: #2ecc71; } /* Brighter green */
-#wsStatus.disconnected { color: #e74c3c; } /* Brighter red */
+#wsStatus.connected { color: #34c759; }
+#wsStatus.disconnected { color: #ff3b30; }
 
 #scoreboard {
     display: flex;
@@ -97,12 +101,13 @@ canvas {
 }
 
 #scoreboard div {
-    background: rgba(0, 0, 0, 0.6); /* Slightly darker */
-    padding: 0.5rem 1.1rem; /* Increased padding */
+    background: rgba(255, 255, 255, 0.8);
+    color: #1c1c1e;
+    padding: 0.5rem 1.1rem;
     border-radius: 0.5rem;
-    min-width: 90px; /* Slightly wider */
+    min-width: 90px;
     text-align: center;
-    box-shadow: 0 3px 7px rgba(0,0,0,0.5); /* Enhanced shadow */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 #logPanel div {
@@ -110,12 +115,13 @@ canvas {
 }
 
 #instructions {
-    max-width: 450px; /* Slightly wider */
-    background: rgba(0, 0, 0, 0.4); /* Slightly darker */
-    padding: 1rem; /* Increased padding */
-    border-radius: 0.35rem; /* Consistent border-radius */
+    max-width: 450px;
+    background: rgba(255, 255, 255, 0.7);
+    color: #1c1c1e;
+    padding: 1rem;
+    border-radius: 0.35rem;
     font-size: 0.9rem;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3); /* Added shadow */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
 #instructions h2 {
@@ -123,24 +129,26 @@ canvas {
     font-weight: 600;
     margin-bottom: 0.5rem;
     text-align: center;
+    color: #1c1c1e;
 }
 
 #logPanel {
     position: fixed;
-    bottom: 1rem; /* Consistent spacing */
-    right: 1rem; /* Consistent spacing */
-    width: 280px; /* Slightly wider */
-    max-height: 35vh; /* Adjusted max-height */
+    bottom: 1rem;
+    right: 1rem;
+    width: 280px;
+    max-height: 35vh;
     overflow-y: auto;
-    background: rgba(0, 0, 0, 0.7); /* Darker background */
-    padding: 0.75rem; /* Increased padding */
-    font-size: 0.8rem; /* Slightly adjusted font size */
-    line-height: 1.3; /* Adjusted line height */
-    border-radius: 0.5rem; /* Consistent border-radius */
-    box-shadow: 0 4px 10px rgba(0,0,0,0.6); /* Enhanced shadow */
+    background: rgba(255, 255, 255, 0.9);
+    color: #1c1c1e;
+    padding: 0.75rem;
+    font-size: 0.8rem;
+    line-height: 1.3;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     white-space: pre-wrap;
-    border: 1px solid rgba(255,255,255,0.1); /* Subtle border */
-    z-index: 5; /* Ensure it's above some elements but below modals/toasts */
+    border: 1px solid rgba(0,0,0,0.1);
+    z-index: 5;
 }
 
 /* Custom scrollbar for logPanel (Webkit browsers) */
@@ -149,17 +157,17 @@ canvas {
 }
 
 #logPanel::-webkit-scrollbar-track {
-    background: rgba(0,0,0,0.2);
+    background: rgba(0,0,0,0.05);
     border-radius: 0.5rem;
 }
 
 #logPanel::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.3);
+    background: rgba(0,0,0,0.3);
     border-radius: 0.5rem;
 }
 
 #logPanel::-webkit-scrollbar-thumb:hover {
-    background: rgba(255,255,255,0.5);
+    background: rgba(0,0,0,0.45);
 }
 
 
@@ -207,28 +215,29 @@ canvas {
     bottom: 2rem;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(20,30,50,0.85); /* Darker, more theme-aligned background */
-    color: #f0f0f0; /* Lighter text color */
-    padding: 0.75rem 1.25rem; /* Increased padding */
-    border-radius: 0.35rem; /* Consistent border-radius */
-    font-size: 0.95rem; /* Slightly larger font */
+    background: rgba(255,255,255,0.9);
+    color: #1c1c1e;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.5rem;
+    font-size: 0.95rem;
     pointer-events: none;
     z-index: 1001;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.5); /* Added shadow */
-    border: 1px solid rgba(255,255,255,0.1); /* Subtle border */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    border: 1px solid rgba(0,0,0,0.1);
 }
 
 .dev-info {
     position: fixed;
-    top: 1rem; /* Adjusted position */
+    top: 1rem;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 0.8rem; /* Slightly adjusted font size */
-    background: rgba(0,0,0,0.6); /* Slightly darker background */
-    padding: 0.25rem 0.5rem; /* Adjusted padding */
-    border-radius: 0.35rem; /* Consistent border-radius */
+    font-size: 0.8rem;
+    background: rgba(255,255,255,0.8);
+    color: #1c1c1e;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.35rem;
     pointer-events: none;
     z-index: 1001;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.4); /* Added shadow */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
