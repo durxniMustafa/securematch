@@ -8,13 +8,25 @@
 </head>
 <body class="bg-neutral-900 text-white flex flex-col items-center gap-4 min-h-screen p-4">
   <div id="calibOverlay" class="calib-overlay hidden">
-    <svg id="calibRing" class="calib-ring" width="120" height="120">
-      <circle cx="60" cy="60" r="54"></circle>
-    </svg>
-    <div id="calibText" class="mt-2">Bitte ruhig halten…</div>
+
   </div>
   <div id="toast" class="toast" style="display:none"></div>
   <div id="devInfo" class="dev-info" style="display:none"></div>
+  <!-- Calibration overlay -->
+  <div id="calibOverlay" class="calib-overlay hidden">
+    <svg id="calibRing" width="120" height="120">
+      <circle id="calibProgress" cx="60" cy="60" r="54" />
+    </svg>
+    <div id="calibText" class="calib-text">Bitte ruhig halten…</div>
+
+  <div id="calibOverlay" class="calib-overlay hidden">
+    <svg width="120" height="120" class="progress-ring">
+      <circle cx="60" cy="60" r="54" class="bg" />
+      <circle id="calibRing" cx="60" cy="60" r="54" class="fg" />
+    </svg>
+    <div id="calibMsg" class="calib-msg">Bitte ruhig halten…</div>
+
+  </div>
 
   <!-- Attractor -->
   <div id="attractor" class="animate-pulse flex flex-col items-center gap-4 text-center">
@@ -45,6 +57,7 @@
   <!-- Vote feedback overlay -->
   <div id="voteFeedback" class="vote-feedback hidden flex flex-col items-center">
     <div id="voteIcon" class="text-6xl">👍</div>
+
     <div class="text-lg mt-2">Deine Stimme wurde gezählt</div>
   </div>
 

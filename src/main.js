@@ -103,7 +103,7 @@ function showGesture(g) {
 
 function showVoteFeedback(g) {
     const el = document.getElementById('voteFeedback');
-    const icon = document.getElementById('voteIcon');
+
     if (!el || !icon) return;
     icon.textContent = g === 'yes' ? '👍' : '👎';
     el.classList.remove('hidden');
@@ -214,13 +214,13 @@ function tick(now) {
         // if user clicked calibrate or hasn't calibrated yet
         if ((pendingCalib && cal.state !== 'READY') || (cal.state === 'WAIT_STABLE' && !cal.active)) {
             cal.start(yaw, pitch);
-            calibUI?.showOverlay(true);
-            if (pendingCalib) calibUI?.showToast('Bitte ruhig halten…');
+
         }
 
         const res = cal.update(yaw, pitch);
         if (res.baseline) {
             faceClassifier.calibrate(id, res.baseline);
+
             calibUI?.showToast('✅ Kalibrierung fertig – los geht\u2019s!');
             calibUI?.beep();
             calibUI?.showOverlay(false);
@@ -242,11 +242,13 @@ function tick(now) {
     if (faces.length) {
         if (!firstSeen) firstSeen = performance.now();
         lostSince = 0;
+        calibUI?.hideOverlay();
     } else {
         firstSeen = 0;
         if (!lostSince) lostSince = performance.now();
         if (performance.now() - lostSince > 1000) {
             calibUI?.showToast('Gesicht verloren – erneut ausrichten');
+
             lostSince = performance.now();
         }
         calibUI?.showOverlay(false);

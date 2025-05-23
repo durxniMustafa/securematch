@@ -1,5 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 
+.hidden {
+    display: none !important;
+}
+
 body {
     font-family: 'Inter', system-ui, sans-serif;
     background: linear-gradient(135deg, #172554, #0e172a);
@@ -163,17 +167,7 @@ canvas {
 }
 
 
-/* --- Calibrator UI --- */
-.calib-overlay {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0,0,0,0.4);
-    z-index: 1001;
-}
+
 
 .calib-ring {
     width: 120px;
@@ -185,10 +179,29 @@ canvas {
     stroke: limegreen;
     stroke-width: 6;
     fill: none;
-    stroke-dasharray: 339;
-    stroke-dashoffset: 339;
+
+}
+
+.progress-ring {
+    transform: rotate(-90deg);
+}
+
+#calibRing {
+    stroke: limegreen;
+    stroke-width: 8;
+    fill: transparent;
+    stroke-dasharray: 339.292; /* 2 * PI * r (r=54) */
+    stroke-dashoffset: 339.292;
     transition: stroke-dashoffset 0.1s linear;
 }
+
+.calib-msg {
+    margin-top: 1rem;
+    background: rgba(0,0,0,0.6);
+    padding: 0.5rem 1rem;
+    border-radius: 0.35rem;
+}
+
 
 .toast {
     position: fixed;
@@ -220,6 +233,7 @@ canvas {
     z-index: 1001;
     box-shadow: 0 1px 3px rgba(0,0,0,0.4); /* Added shadow */
 }
+
 
 /* --- Attractor pulse circle --- */
 #startCircle {
