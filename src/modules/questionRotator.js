@@ -29,18 +29,25 @@ function showQuestion(question) {
     set({
         mode: 'idle',
         question,
-        deadline: Date.now() + 60_000,  // 60s
+        deadline: Date.now() + 8_000,
         tally: { yes: 0, no: 0 },
     });
 
     updateQuestionUI(question);
-    startCountdown(60);
+    startCountdown(8);
 }
 
 // Simple countdown in seconds
 function startCountdown(seconds) {
     const clockEl = document.getElementById('clock');
+    const ring = document.getElementById('timerRing');
     clockEl.classList.remove('hidden');
+    if (ring) {
+        ring.style.animation = 'none';
+        // force reflow
+        ring.getBoundingClientRect();
+        ring.style.animation = `countdown ${seconds}s linear forwards`;
+    }
 
     clearInterval(timerHandle);
     timerHandle = setInterval(() => {
@@ -53,7 +60,7 @@ function startCountdown(seconds) {
             // after some time, load next question
             setTimeout(nextQuestion, 5000);
         } else {
-            clockEl.textContent = `Time Left: ${remaining}s`;
+            clockEl.textContent = `${remaining}s`;
         }
     }, 250);
 }
@@ -62,6 +69,8 @@ function freezeUI() {
     // Hide countdown
     const clockEl = document.getElementById('clock');
     clockEl.classList.add('hidden');
+    const card = document.getElementById('questionCard');
+    if (card) card.classList.add('hidden');
     // Show QR code
     showQR('https://example.com/discussion');  // or some dynamic link
     // Possibly stop vote meter or freeze it
@@ -79,6 +88,8 @@ function nextQuestion() {
 
 function updateQuestionUI(q) {
     const qEl = document.getElementById('q');
+    const card = document.getElementById('questionCard');
     qEl.textContent = q;
     qEl.classList.remove('hidden');
+    if (card) card.classList.remove('hidden');
 }

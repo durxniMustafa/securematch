@@ -101,6 +101,17 @@ function showGesture(g) {
     setTimeout(() => (el.style.display = 'none'), 800);
 }
 
+function showVoteFeedback(g) {
+    const el = document.getElementById('voteFeedback');
+    const icon = document.getElementById('voteIcon');
+    if (!el || !icon) return;
+    icon.textContent = g === 'yes' ? '👍' : '👎';
+    el.classList.remove('hidden');
+    setTimeout(() => {
+        el.classList.add('hidden');
+    }, 1000);
+}
+
 /**
  * Register & log a yes/no vote
  */
@@ -110,6 +121,7 @@ function registerVote(gesture) {
         lastVoteTime[gesture] = now;
         sendVote(gesture);
         showGesture(gesture);
+        showVoteFeedback(gesture);
         appendLog(`Gesture accepted: ${gesture}`);
     } else {
         appendLog(`Gesture ignored (cooldown): ${gesture}`);
@@ -202,13 +214,18 @@ function tick(now) {
         // if user clicked calibrate or hasn't calibrated yet
         if ((pendingCalib && cal.state !== 'READY') || (cal.state === 'WAIT_STABLE' && !cal.active)) {
             cal.start(yaw, pitch);
-            if (pendingCalib) calibUI?.showToast('Hold still…');
+            if (pendingCalib) {
+                calibUI?.showOverlay();
+                calibUI?.setText('Bitte ruhig halten…');
+            }
         }
 
         const res = cal.update(yaw, pitch);
         if (res.baseline) {
             faceClassifier.calibrate(id, res.baseline);
-            calibUI?.showToast('Calibration complete');
+            calibUI?.setText('');
+            calibUI?.hideOverlay();
+            calibUI?.showToast('✅ Kalibrierung fertig – los geht\u2019s!');
             calibUI?.beep();
         }
 
@@ -228,11 +245,14 @@ function tick(now) {
     if (faces.length) {
         if (!firstSeen) firstSeen = performance.now();
         lostSince = 0;
+        calibUI?.hideOverlay();
     } else {
         firstSeen = 0;
         if (!lostSince) lostSince = performance.now();
         if (performance.now() - lostSince > 1000) {
-            calibUI?.showToast('Face lost — look at camera to resume.');
+            calibUI?.showToast('Gesicht verloren – erneut ausrichten');
+            calibUI?.showOverlay();
+            calibUI?.setText('Gesicht verloren – erneut ausrichten');
             lostSince = performance.now();
         }
     }
