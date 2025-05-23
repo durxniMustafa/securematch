@@ -3,6 +3,9 @@ export function initCalibratorUI() {
     const dot = document.getElementById('calibDot');
     const toastEl = document.getElementById('toast');
     const infoEl = document.getElementById('devInfo');
+    const overlay = document.getElementById('calibOverlay');
+    const ring = document.getElementById('calibRing');
+    const msgEl = document.getElementById('calibMsg');
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     function beep() {
@@ -21,17 +24,34 @@ export function initCalibratorUI() {
     function showToast(msg) {
         if (!toastEl) return;
         toastEl.textContent = msg;
+        toastEl.style.opacity = '1';
         toastEl.style.display = 'block';
         setTimeout(() => {
-            toastEl.style.display = 'none';
-        }, 1500);
+            toastEl.style.opacity = '0';
+            setTimeout(() => {
+                toastEl.style.display = 'none';
+                toastEl.style.opacity = '1';
+            }, 300);
+        }, 1000);
+    }
+
+    function showOverlay(show) {
+        if (!overlay) return;
+        overlay.classList.toggle('hidden', !show);
+    }
+
+    function update(progress, still) {
+        if (bar) bar.style.width = `${Math.round(progress * 100)}%`;
+        if (dot) dot.style.background = still ? 'limegreen' : 'red';
+        if (ring) {
+            const circ = 339.292; // 2*pi*r
+            ring.style.strokeDashoffset = circ * (1 - progress);
+        }
     }
 
     return {
-        update(progress, still) {
-            if (bar) bar.style.width = `${Math.round(progress * 100)}%`;
-            if (dot) dot.style.background = still ? 'limegreen' : 'red';
-        },
+        update,
+        showOverlay,
         showToast,
         beep,
         updateInfo(text) {
@@ -39,6 +59,7 @@ export function initCalibratorUI() {
                 infoEl.textContent = text;
                 infoEl.style.display = text ? 'block' : 'none';
             }
+            if (msgEl) msgEl.textContent = text;
         }
     };
 }
