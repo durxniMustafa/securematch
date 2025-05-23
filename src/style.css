@@ -1,5 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 
+.hidden {
+    display: none !important;
+}
+
 body {
     font-family: 'Inter', system-ui, sans-serif;
     background: linear-gradient(135deg, #172554, #0e172a);
@@ -164,28 +168,36 @@ canvas {
 
 
 /* --- Calibrator UI --- */
-#calibBar {
+#calibOverlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    height: 4px;
-    width: 0%;
-    background: limegreen;
-    transition: width 0.1s linear;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    align-items: center;
     z-index: 1000;
 }
 
-#calibDot {
-    position: fixed;
-    top: 6px;
-    left: 50%;
-    width: 12px;
-    height: 12px;
-    margin-left: -6px;
-    border-radius: 50%;
-    background: red;
-    pointer-events: none;
-    z-index: 1001;
+.calib-ring {
+    width: 120px;
+    height: 120px;
+    transform: rotate(-90deg);
+}
+
+.calib-ring circle {
+    stroke: limegreen;
+    stroke-width: 6;
+    fill: none;
+    stroke-dasharray: 352;
+    stroke-dashoffset: 352;
+    transition: stroke-dashoffset 0.1s linear;
+}
+
+#calibText {
+    margin-top: 0.5rem;
+    background: rgba(0,0,0,0.7);
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.35rem;
 }
 
 .toast {
@@ -202,6 +214,7 @@ canvas {
     z-index: 1001;
     box-shadow: 0 2px 8px rgba(0,0,0,0.5); /* Added shadow */
     border: 1px solid rgba(255,255,255,0.1); /* Subtle border */
+    transition: opacity 0.3s;
 }
 
 .dev-info {
@@ -216,5 +229,77 @@ canvas {
     pointer-events: none;
     z-index: 1001;
     box-shadow: 0 1px 3px rgba(0,0,0,0.4); /* Added shadow */
+}
+
+/* --- Attractor pulse circle --- */
+#startCircle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.6);
+    animation: pulseCircle 2s infinite;
+}
+
+@keyframes pulseCircle {
+    0% { transform: scale(0.9); opacity: 0.7; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(0.9); opacity: 0.7; }
+}
+
+/* --- Question card and timer ring --- */
+#questionCard {
+    position: relative;
+    padding: 1rem 2rem;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 0.5rem;
+    background: rgba(0,0,0,0.5);
+}
+
+#timerRing {
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    width: 140px;
+    height: 140px;
+    transform: rotate(-90deg);
+    pointer-events: none;
+}
+
+#timerRing circle {
+    stroke: white;
+    stroke-width: 4;
+    fill: none;
+    stroke-dasharray: 402;
+    stroke-dashoffset: 402;
+}
+
+@keyframes countdown {
+    to { stroke-dashoffset: 0; }
+}
+
+/* --- Vote feedback overlay --- */
+.vote-feedback {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.7);
+    padding: 1rem 2rem;
+    border-radius: 0.5rem;
+    z-index: 1001;
+    text-align: center;
+}
+
+/* --- QR container --- */
+#qrContainer {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.8);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    z-index: 1001;
+    text-align: center;
 }
 
