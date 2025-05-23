@@ -1,5 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 
+.hidden {
+    display: none !important;
+}
+
 body {
     font-family: 'Inter', system-ui, sans-serif;
     background: linear-gradient(135deg, #172554, #0e172a);
@@ -165,6 +169,9 @@ canvas {
 
 /* --- Calibrator UI --- */
 .calib-overlay {
+
+#calibOverlay {
+
     position: fixed;
     top: 50%;
     left: 50%;
@@ -174,6 +181,32 @@ canvas {
     align-items: center;
     pointer-events: none;
     z-index: 1001;
+    display: none;
+    align-items: center;
+    z-index: 1000;
+}
+
+.calib-ring {
+    width: 120px;
+    height: 120px;
+    transform: rotate(-90deg);
+}
+
+.calib-ring circle {
+    stroke: limegreen;
+    stroke-width: 6;
+    fill: none;
+    stroke-dasharray: 352;
+    stroke-dashoffset: 352;
+    transition: stroke-dashoffset 0.1s linear;
+}
+
+#calibText {
+    margin-top: 0.5rem;
+    background: rgba(0,0,0,0.7);
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.35rem;
+
 }
 
 #calibRing {

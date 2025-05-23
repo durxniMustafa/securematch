@@ -1,11 +1,24 @@
 export function initCalibratorUI() {
     const overlay = document.getElementById('calibOverlay');
     const ring = document.getElementById('calibProgress');
+
+    const ring = document.getElementById('calibRing');
+    const ringCircle = ring ? ring.querySelector('circle') : null;
+    const textEl = document.getElementById('calibText');
+
     const toastEl = document.getElementById('toast');
     const infoEl = document.getElementById('devInfo');
     const textEl = document.getElementById('calibText');
     const circumference = 352; // 2 * PI * r (r=56)
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    let circumference = 0;
+    if (ringCircle) {
+        const r = parseFloat(ringCircle.getAttribute('r'));
+        circumference = 2 * Math.PI * r;
+        ringCircle.style.strokeDasharray = circumference;
+        ringCircle.style.strokeDashoffset = circumference;
+    }
 
     function beep() {
         const osc = audioCtx.createOscillator();
@@ -32,6 +45,19 @@ export function initCalibratorUI() {
                 toastEl.style.opacity = '1';
             }, 300);
         }, 1000);
+
+    }
+
+    function show() {
+        if (overlay) overlay.style.display = 'flex';
+        if (textEl) textEl.textContent = 'Bitte ruhig halten…';
+    }
+
+    function hide() {
+        if (overlay) overlay.style.display = 'none';
+        if (ringCircle) ringCircle.style.strokeDashoffset = circumference;
+        if (textEl) textEl.textContent = '';
+
     }
 
     return {
@@ -44,8 +70,14 @@ export function initCalibratorUI() {
             }
             if (textEl) {
                 textEl.textContent = 'Bitte ruhig halten…';
+            show();
+            if (ringCircle) {
+                ringCircle.style.strokeDashoffset = circumference * (1 - progress);
+                ringCircle.style.stroke = still ? 'limegreen' : 'tomato';
             }
         },
+        show,
+        hide,
         showToast,
         beep,
         updateInfo(text) {

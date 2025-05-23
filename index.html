@@ -13,6 +13,13 @@
       <circle id="calibProgress" cx="60" cy="60" r="56"></circle>
     </svg>
     <div id="calibText" class="mt-2">Bitte ruhig halten…</div>
+
+  <div id="calibOverlay" class="hidden flex flex-col items-center">
+    <svg id="calibRing" class="calib-ring" width="120" height="120">
+      <circle cx="60" cy="60" r="56" />
+    </svg>
+    <div id="calibText" class="calib-text mt-2">Bitte ruhig halten…</div>
+
   </div>
   <div id="toast" class="toast" style="display:none"></div>
   <div id="devInfo" class="dev-info" style="display:none"></div>
@@ -46,6 +53,10 @@
   <!-- Vote feedback overlay -->
   <div id="voteFeedback" class="vote-feedback hidden flex flex-col items-center">
     <div id="voteIcon" class="text-6xl">👍</div>
+
+    <div id="voteText" class="text-lg mt-2">Deine Stimme wurde gezählt</div>
+
+
     <div class="text-lg mt-2">Deine Stimme wurde gezählt</div>
   </div>
 
