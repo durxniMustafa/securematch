@@ -255,7 +255,10 @@ export function createClassifierMap(options = {}) {
             /* ---------------------------------------------------------------
                NO (shake) FSM
                ---------------------------------------------------------------*/
-            if (!s.shakeSwinging && Math.abs(yawDot) > cfg.yVel && Math.abs(dyaw) > cfg.yawAmp) {
+            if (!s.shakeSwinging &&
+                Math.abs(yawDot) > cfg.yVel &&
+                Math.abs(dyaw)  > cfg.yawAmp &&
+                Math.abs(dpitch) < cfg.guardPitch) {
                 s.shakeSwinging = true;
                 s.shakeDir = Math.sign(yawDot);
                 s.shakeT0 = nowMs;
