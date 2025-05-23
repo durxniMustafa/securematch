@@ -5,8 +5,9 @@ export function showQR(link) {
     if (!container) return;
     container.classList.remove('hidden');
     container.innerHTML = `
-    <p class="text-center">Scan to discuss further:</p>
+    <h2 class="text-center text-xl mb-2">Scanne &amp; chatte weiter</h2>
     <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(link)}" alt="QR Code" />
+    <p class="text-center text-sm mt-1">${link}</p>
   `;
 }
 
