@@ -241,3 +241,34 @@ canvas {
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
+/* Intro modal explaining nod/shake controls */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1002;
+}
+
+.modal-content {
+    background: white;
+    color: #1c1c1e;
+    padding: 1rem 1.25rem;
+    border-radius: 0.5rem;
+    max-width: 320px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.modal-content button {
+    margin-top: 0.75rem;
+    padding: 0.4rem 1rem;
+    background-color: #007aff;
+    color: white;
+    border: none;
+    border-radius: 0.35rem;
+    cursor: pointer;
+}
+

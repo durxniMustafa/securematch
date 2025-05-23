@@ -45,6 +45,7 @@ import {
 import { startQuestionCycle } from './modules/questionRotator.js';
 import { initChat, sendVote } from './modules/chatClient.js';
 import { initAttractor } from './modules/attractor.js';
+import { initIntroModal } from './modules/introModal.js';
 import './modules/healthMonitor.js'; // side-effects only
 import { initLogger } from './modules/logger.js';
 
@@ -146,6 +147,7 @@ async function setup() {
     await startQuestionCycle();
     initChat();
     initAttractor();
+    initIntroModal();
     startVoteMeter();
     calibUI = initCalibratorUI();
     initLogger(subscribe);
