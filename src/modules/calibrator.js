@@ -1,6 +1,6 @@
 export function createCalibrator(options = {}) {
     const cfg = Object.assign({
-        stillThresh: 2,
+        stillThresh: 0.05,
         stillFrames: 10,
         capFrames: 30,
     }, options);
