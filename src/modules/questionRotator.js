@@ -2,6 +2,9 @@ import { set, get } from '../store.js';
 import { showQR, hideQR } from './qrGenerator.js';
 import { stopVoteMeter } from './voteTally.js';
 
+const QUESTION_TIME_MS = 60_000;  // 1 minute per question
+const QR_TIME_MS = 60_000;        // 1 minute for the QR screen
+
 let questions = [];
 
 let currentIndex = 0;
@@ -29,45 +32,68 @@ function showQuestion(question) {
     set({
         mode: 'idle',
         question,
-        deadline: Date.now() + 60_000,  // 60s
+        deadline: Date.now() + 8_000,
+
         tally: { yes: 0, no: 0 },
     });
 
     updateQuestionUI(question);
-    startCountdown(60);
+    startCountdown(8);
+
 }
 
 // Simple countdown in seconds
-function startCountdown(seconds) {
+function startCountdown(seconds, onDone, showRing = true) {
     const clockEl = document.getElementById('clock');
+    const ring = document.getElementById('timerRing');
     clockEl.classList.remove('hidden');
+    if (ring) {
+        ring.style.animation = 'none';
+        // force reflow
+        ring.getBoundingClientRect();
+        ring.style.animation = `countdown ${seconds}s linear forwards`;
+
+    }
 
     clearInterval(timerHandle);
     timerHandle = setInterval(() => {
         const remaining = Math.floor((get().deadline - Date.now()) / 1000);
         if (remaining <= 0) {
             clearInterval(timerHandle);
-            // time’s up → show QR, freeze bars
-            set({ mode: 'qr' });
-            freezeUI();
-            // after some time, load next question
-            setTimeout(nextQuestion, 5000);
+            if (typeof onDone === 'function') onDone();
         } else {
-            clockEl.textContent = `Time Left: ${remaining}s`;
+            clockEl.textContent = `${remaining}s`;
         }
     }, 250);
 }
 
+function showQrPhase() {
+    set({ mode: 'qr', deadline: Date.now() + QR_TIME_MS });
+    freezeUI();
+    startCountdown(QR_TIME_MS / 1000, nextQuestion, false);
+}
+
 function freezeUI() {
-    // Hide countdown
+    // Hide question card and timer ring
+    const ring = document.getElementById('timerRing');
+    if (ring) ring.style.animation = 'none';
+    const card = document.getElementById('questionCard');
+    if (card) card.classList.add('hidden');
+
+    // Show QR and countdown text
     const clockEl = document.getElementById('clock');
     clockEl.classList.add('hidden');
+    const card = document.getElementById('questionCard');
+    if (card) card.classList.add('hidden');
     // Show QR code
     showQR('https://example.com/discussion');  // or some dynamic link
     // Possibly stop vote meter or freeze it
     // In this example, let's keep it displayed but not destroyed
     // If you wanted to hide it, you could do:
     // stopVoteMeter();
+    clockEl.classList.remove('hidden');
+    showQR('https://example.com/discussion');
+    // Optionally stop vote meter etc.
 }
 
 function nextQuestion() {
@@ -79,6 +105,8 @@ function nextQuestion() {
 
 function updateQuestionUI(q) {
     const qEl = document.getElementById('q');
+    const card = document.getElementById('questionCard');
     qEl.textContent = q;
     qEl.classList.remove('hidden');
+    if (card) card.classList.remove('hidden');
 }
