@@ -10,13 +10,12 @@ export async function loadDetector() {
             modelAssetPath: '/models/face_landmarker.task'
         },
         runningMode: 'VIDEO',
-        numFaces: 1,
-        outputFacialTransformationMatrixes: true
+        numFaces: 1
     });
     return detector;
 }
 
 export function detectFaces(det, video) {
     const res = det.detectForVideo(video, Date.now());
-    return res || { faceLandmarks: [], facialTransformationMatrixes: [] };
+    return res && res.faceLandmarks ? res.faceLandmarks : [];
 }
