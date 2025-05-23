@@ -165,27 +165,41 @@ canvas {
 
 /* --- Calibrator UI --- */
 #calibBar {
+    --progress: 0%;
     position: fixed;
-    top: 0;
-    left: 0;
-    height: 4px;
-    width: 0%;
-    background: limegreen;
-    transition: width 0.1s linear;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: conic-gradient(limegreen var(--progress), rgba(255,255,255,0.2) var(--progress));
     z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #calibDot {
-    position: fixed;
-    top: 6px;
-    left: 50%;
+    position: absolute;
     width: 12px;
     height: 12px;
-    margin-left: -6px;
     border-radius: 50%;
     background: red;
     pointer-events: none;
     z-index: 1001;
+}
+
+.sensitivity-control {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+}
+
+#sensitivitySlider {
+    width: 150px;
 }
 
 .toast {

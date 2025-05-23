@@ -29,7 +29,7 @@ export function initCalibratorUI() {
 
     return {
         update(progress, still) {
-            if (bar) bar.style.width = `${Math.round(progress * 100)}%`;
+            if (bar) bar.style.setProperty('--progress', `${Math.round(progress * 100)}%`);
             if (dot) dot.style.background = still ? 'limegreen' : 'red';
         },
         showToast,

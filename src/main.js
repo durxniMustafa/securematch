@@ -132,10 +132,10 @@ async function setup() {
         deepDebug: true,  // ensure console logs appear
         ...mbp2020Defaults,
         // pass real gates for nod/shake
-        pVel: 0.08,
-        yVel: 0.08,
-        pitchAmp: 0.025,
-        yawAmp: 0.025
+        pVel: 0.12,
+        yVel: 0.20,
+        pitchAmp: 0.03,
+        yawAmp: 0.05
     });
 
     // 3) hand
@@ -165,6 +165,16 @@ async function setup() {
     const calibrateBtn = document.getElementById('calibrateBtn');
     if (calibrateBtn) {
         calibrateBtn.onclick = () => { pendingCalib = true; };
+    }
+
+    const sensSlider = document.getElementById('sensitivitySlider');
+    if (sensSlider) {
+        sensSlider.value = faceClassifier.config.yVel.toFixed(2);
+        sensSlider.addEventListener('input', () => {
+            const v = parseFloat(sensSlider.value);
+            faceClassifier.config.yVel = v;
+            faceClassifier.config.pVel = v;
+        });
     }
 
     document.addEventListener('keydown', e => {
