@@ -33,12 +33,15 @@ function showQuestion(question) {
         mode: 'idle',
         question,
         deadline: Date.now() + 8_000,
+
         deadline: Date.now() + QUESTION_TIME_MS,
+
         tally: { yes: 0, no: 0 },
     });
 
     updateQuestionUI(question);
     startCountdown(8);
+
     startCountdown(QUESTION_TIME_MS / 1000, showQrPhase, true);
 }
 
@@ -52,9 +55,11 @@ function startCountdown(seconds, onDone, showRing = true) {
         // force reflow
         ring.getBoundingClientRect();
         ring.style.animation = `countdown ${seconds}s linear forwards`;
+
         if (showRing) {
             ring.style.animation = `countdown ${seconds}s linear forwards`;
         }
+
     }
 
     clearInterval(timerHandle);

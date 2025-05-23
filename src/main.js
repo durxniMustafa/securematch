@@ -104,6 +104,7 @@ function showGesture(g) {
 function showVoteFeedback(g) {
     const el = document.getElementById('voteFeedback');
     const icon = document.getElementById('voteIcon');
+
     const text = document.getElementById('voteText');
     if (!el || !icon) return;
     icon.textContent = g === 'yes' ? '👍' : '👎';
@@ -218,6 +219,8 @@ function tick(now) {
         // if user clicked calibrate or hasn't calibrated yet
         if ((pendingCalib && cal.state !== 'READY') || (cal.state === 'WAIT_STABLE' && !cal.active)) {
             cal.start(yaw, pitch);
+            if (pendingCalib) calibUI?.showToast('Bitte ruhig halten…');
+
             if (pendingCalib) {
                 calibUI?.show();
                 calibUI?.showToast('Bitte ruhig halten…');
@@ -225,13 +228,16 @@ function tick(now) {
 
             if (pendingCalib) calibUI?.showToast('Bitte ruhig halten…');
 
+
         }
 
         const res = cal.update(yaw, pitch);
         if (res.baseline) {
             faceClassifier.calibrate(id, res.baseline);
+
             calibUI?.hide();
             calibUI?.showToast('✅ Kalibrierung fertig – nicke für Ja, schüttle für Nein');
+
             calibUI?.showToast('✅ Kalibrierung fertig – los geht\u2019s!');
             calibUI?.beep();
         }

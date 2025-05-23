@@ -168,11 +168,19 @@ canvas {
 
 
 /* --- Calibrator UI --- */
+.calib-overlay {
+
 #calibOverlay {
+
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+    z-index: 1001;
     display: none;
     align-items: center;
     z-index: 1000;
@@ -198,6 +206,29 @@ canvas {
     background: rgba(0,0,0,0.7);
     padding: 0.25rem 0.75rem;
     border-radius: 0.35rem;
+
+}
+
+#calibRing {
+    width: 120px;
+    height: 120px;
+    transform: rotate(-90deg);
+}
+
+#calibRing circle {
+    fill: none;
+    stroke-width: 6;
+}
+
+#calibTrack {
+    stroke: rgba(255,255,255,0.3);
+}
+
+#calibProgress {
+    stroke: limegreen;
+    stroke-dasharray: 352;
+    stroke-dashoffset: 352;
+    transition: stroke-dashoffset 0.1s linear;
 }
 
 .toast {
