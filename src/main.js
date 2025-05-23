@@ -108,6 +108,8 @@ function showVoteFeedback(g) {
     if (!el || !icon) return;
     icon.textContent = g === 'yes' ? '👍' : '👎';
     if (text) text.textContent = `Du hast ${g === 'yes' ? 'Ja' : 'Nein'} gewählt`;
+    if (!el || !icon) return;
+    icon.textContent = g === 'yes' ? '👍' : '👎';
     el.classList.remove('hidden');
     setTimeout(() => {
         el.classList.add('hidden');
@@ -220,6 +222,9 @@ function tick(now) {
                 calibUI?.show();
                 calibUI?.showToast('Bitte ruhig halten…');
             }
+
+            if (pendingCalib) calibUI?.showToast('Bitte ruhig halten…');
+
         }
 
         const res = cal.update(yaw, pitch);
@@ -227,6 +232,7 @@ function tick(now) {
             faceClassifier.calibrate(id, res.baseline);
             calibUI?.hide();
             calibUI?.showToast('✅ Kalibrierung fertig – nicke für Ja, schüttle für Nein');
+            calibUI?.showToast('✅ Kalibrierung fertig – los geht\u2019s!');
             calibUI?.beep();
         }
 

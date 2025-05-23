@@ -51,6 +51,7 @@ export function initCalibratorUI() {
         if (overlay) overlay.style.display = 'none';
         if (ringCircle) ringCircle.style.strokeDashoffset = circumference;
         if (textEl) textEl.textContent = '';
+
     }
 
     return {
