@@ -294,6 +294,46 @@ canvas {
     box-shadow: 0 1px 3px rgba(0,0,0,0.4); /* Added shadow */
 }
 
+/* --- Calibration overlay --- */
+.calib-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.5);
+    z-index: 1001;
+}
+
+.calib-overlay.hidden {
+    display: none;
+}
+
+#calibRing {
+    width: 120px;
+    height: 120px;
+    transform: rotate(-90deg);
+}
+
+#calibProgress {
+    stroke: limegreen;
+    stroke-width: 8;
+    fill: none;
+    stroke-dasharray: 339;
+    stroke-dashoffset: 339;
+}
+
+#calibText {
+    margin-top: 0.5rem;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+
 /* --- Attractor pulse circle --- */
 #startCircle {
     width: 80px;

@@ -9,12 +9,15 @@ export function initCalibratorUI() {
     const toastEl = document.getElementById('toast');
     const infoEl = document.getElementById('devInfo');
     const overlay = document.getElementById('calibOverlay');
+    const ring = document.getElementById('calibProgress');
+    const textEl = document.getElementById('calibText');
     const ring = document.getElementById('calibRing');
     const msgEl = document.getElementById('calibMsg');
 
     const textEl = document.getElementById('calibText');
     const circumference = 352; // 2 * PI * r (r=56)
 
+>
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     let circumference = 0;
@@ -52,6 +55,24 @@ export function initCalibratorUI() {
         }, 1000);
     }
 
+    function showOverlay() {
+        if (overlay) overlay.classList.remove('hidden');
+    }
+
+    function hideOverlay() {
+        if (overlay) overlay.classList.add('hidden');
+    }
+
+    function setText(msg) {
+        if (textEl) textEl.textContent = msg;
+    }
+
+    function updateRing(p) {
+        if (ring) {
+            const max = 339; // circumference
+            ring.style.strokeDashoffset = max - max * p;
+        }
+
     function showOverlay(show) {
         if (!overlay) return;
         overlay.classList.toggle('hidden', !show);
@@ -83,10 +104,15 @@ export function initCalibratorUI() {
         if (ringCircle) ringCircle.style.strokeDashoffset = circumference;
         if (textEl) textEl.textContent = '';
 
+
     }
 
     return {
         update(progress, still) {
+            if (bar) bar.style.width = `${Math.round(progress * 100)}%`;
+            if (dot) dot.style.background = still ? 'limegreen' : 'red';
+            updateRing(progress);
+
             if (ring) {
                 ring.style.strokeDashoffset = circumference * (1 - progress);
             }
@@ -100,11 +126,15 @@ export function initCalibratorUI() {
                 ringCircle.style.strokeDashoffset = circumference * (1 - progress);
                 ringCircle.style.stroke = still ? 'limegreen' : 'tomato';
             }
+
         },
         show,
         hide,
 
         showToast,
+        showOverlay,
+        hideOverlay,
+        setText,
         beep,
         updateInfo(text) {
             if (infoEl) {

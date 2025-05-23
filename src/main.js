@@ -106,10 +106,12 @@ function showVoteFeedback(g) {
     const icon = document.getElementById('voteIcon');
 
 
+
     const text = document.getElementById('voteText');
     if (!el || !icon) return;
     icon.textContent = g === 'yes' ? '👍' : '👎';
     if (text) text.textContent = `Du hast ${g === 'yes' ? 'Ja' : 'Nein'} gewählt`;
+
 
     if (!el || !icon) return;
     icon.textContent = g === 'yes' ? '👍' : '👎';
@@ -222,6 +224,10 @@ function tick(now) {
         if ((pendingCalib && cal.state !== 'READY') || (cal.state === 'WAIT_STABLE' && !cal.active)) {
             cal.start(yaw, pitch);
             if (pendingCalib) {
+                calibUI?.showOverlay();
+                calibUI?.setText('Bitte ruhig halten…');
+            }
+
                 calibUI?.showToast('Bitte ruhig halten…');
                 calibUI?.showOverlay(true);
             }
@@ -237,12 +243,13 @@ function tick(now) {
 
 
 
-         
         }
 
         const res = cal.update(yaw, pitch);
         if (res.baseline) {
             faceClassifier.calibrate(id, res.baseline);
+            calibUI?.setText('');
+            calibUI?.hideOverlay();
 
 
             calibUI?.hide();
@@ -270,11 +277,15 @@ function tick(now) {
     if (faces.length) {
         if (!firstSeen) firstSeen = performance.now();
         lostSince = 0;
+        calibUI?.hideOverlay();
     } else {
         firstSeen = 0;
         if (!lostSince) lostSince = performance.now();
         if (performance.now() - lostSince > 1000) {
             calibUI?.showToast('Gesicht verloren – erneut ausrichten');
+            calibUI?.showOverlay();
+            calibUI?.setText('Gesicht verloren – erneut ausrichten');
+
             lostSince = performance.now();
         }
     }
