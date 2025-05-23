@@ -1,11 +1,7 @@
 export function initCalibratorUI() {
     const overlay = document.getElementById('calibOverlay');
-    const ring = document.getElementById('calibProgress');
 
-    const ring = document.getElementById('calibRing');
-    const ringCircle = ring ? ring.querySelector('circle') : null;
-    const textEl = document.getElementById('calibText');
-
+  
     const toastEl = document.getElementById('toast');
     const infoEl = document.getElementById('devInfo');
     const overlay = document.getElementById('calibOverlay');
@@ -21,11 +17,8 @@ export function initCalibratorUI() {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     let circumference = 0;
-    if (ringCircle) {
-        const r = parseFloat(ringCircle.getAttribute('r'));
-        circumference = 2 * Math.PI * r;
-        ringCircle.style.strokeDasharray = circumference;
-        ringCircle.style.strokeDashoffset = circumference;
+
+
     }
 
     function beep() {
@@ -53,6 +46,7 @@ export function initCalibratorUI() {
                 toastEl.style.opacity = '1';
             }, 300);
         }, 1000);
+
     }
 
     function showOverlay() {
@@ -143,5 +137,15 @@ export function initCalibratorUI() {
             }
             if (msgEl) msgEl.textContent = text;
         }
-    };
+        if (textEl) textEl.style.color = still ? 'limegreen' : 'red';
+    }
+
+    function updateInfo(text) {
+        if (infoEl) {
+            infoEl.textContent = text;
+            infoEl.style.display = text ? 'block' : 'none';
+        }
+    }
+
+    return { update, showOverlay, showToast, beep, updateInfo };
 }

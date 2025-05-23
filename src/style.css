@@ -167,24 +167,7 @@ canvas {
 }
 
 
-/* --- Calibrator UI --- */
-.calib-overlay {
 
-#calibOverlay {
-
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    pointer-events: none;
-    z-index: 1001;
-    display: none;
-    align-items: center;
-    z-index: 1000;
-}
 
 .calib-ring {
     width: 120px;
@@ -196,50 +179,7 @@ canvas {
     stroke: limegreen;
     stroke-width: 6;
     fill: none;
-    stroke-dasharray: 352;
-    stroke-dashoffset: 352;
-    transition: stroke-dashoffset 0.1s linear;
-}
 
-#calibText {
-    margin-top: 0.5rem;
-    background: rgba(0,0,0,0.7);
-    padding: 0.25rem 0.75rem;
-    border-radius: 0.35rem;
-
-}
-
-#calibRing {
-    width: 120px;
-    height: 120px;
-    transform: rotate(-90deg);
-}
-
-#calibRing circle {
-    fill: none;
-    stroke-width: 6;
-}
-
-#calibTrack {
-    stroke: rgba(255,255,255,0.3);
-}
-
-#calibProgress {
-    stroke: limegreen;
-    stroke-dasharray: 352;
-    stroke-dashoffset: 352;
-    transition: stroke-dashoffset 0.1s linear;
-}
-
-.calib-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-    z-index: 1000;
 }
 
 .progress-ring {
@@ -292,45 +232,6 @@ canvas {
     pointer-events: none;
     z-index: 1001;
     box-shadow: 0 1px 3px rgba(0,0,0,0.4); /* Added shadow */
-}
-
-/* --- Calibration overlay --- */
-.calib-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background: rgba(0,0,0,0.5);
-    z-index: 1001;
-}
-
-.calib-overlay.hidden {
-    display: none;
-}
-
-#calibRing {
-    width: 120px;
-    height: 120px;
-    transform: rotate(-90deg);
-}
-
-#calibProgress {
-    stroke: limegreen;
-    stroke-width: 8;
-    fill: none;
-    stroke-dasharray: 339;
-    stroke-dashoffset: 339;
-}
-
-#calibText {
-    margin-top: 0.5rem;
-    font-size: 1.1rem;
-    text-align: center;
 }
 
 
