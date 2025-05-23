@@ -104,6 +104,15 @@ function showGesture(g) {
 function showVoteFeedback(g) {
     const el = document.getElementById('voteFeedback');
     const icon = document.getElementById('voteIcon');
+
+
+
+    const text = document.getElementById('voteText');
+    if (!el || !icon) return;
+    icon.textContent = g === 'yes' ? '👍' : '👎';
+    if (text) text.textContent = `Du hast ${g === 'yes' ? 'Ja' : 'Nein'} gewählt`;
+
+
     if (!el || !icon) return;
     icon.textContent = g === 'yes' ? '👍' : '👎';
     el.classList.remove('hidden');
@@ -218,6 +227,22 @@ function tick(now) {
                 calibUI?.showOverlay();
                 calibUI?.setText('Bitte ruhig halten…');
             }
+
+                calibUI?.showToast('Bitte ruhig halten…');
+                calibUI?.showOverlay(true);
+            }
+
+            if (pendingCalib) calibUI?.showToast('Bitte ruhig halten…');
+
+            if (pendingCalib) {
+                calibUI?.show();
+                calibUI?.showToast('Bitte ruhig halten…');
+            }
+
+            if (pendingCalib) calibUI?.showToast('Bitte ruhig halten…');
+
+
+
         }
 
         const res = cal.update(yaw, pitch);
@@ -225,8 +250,15 @@ function tick(now) {
             faceClassifier.calibrate(id, res.baseline);
             calibUI?.setText('');
             calibUI?.hideOverlay();
+
+
+            calibUI?.hide();
+            calibUI?.showToast('✅ Kalibrierung fertig – nicke für Ja, schüttle für Nein');
+
+
             calibUI?.showToast('✅ Kalibrierung fertig – los geht\u2019s!');
             calibUI?.beep();
+            calibUI?.showOverlay(false);
         }
 
         // update calibrator UI for the main face (id=0)
@@ -253,6 +285,7 @@ function tick(now) {
             calibUI?.showToast('Gesicht verloren – erneut ausrichten');
             calibUI?.showOverlay();
             calibUI?.setText('Gesicht verloren – erneut ausrichten');
+
             lostSince = performance.now();
         }
     }

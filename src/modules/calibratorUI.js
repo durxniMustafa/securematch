@@ -1,12 +1,32 @@
 export function initCalibratorUI() {
-    const bar = document.getElementById('calibBar');
-    const dot = document.getElementById('calibDot');
+    const overlay = document.getElementById('calibOverlay');
+    const ring = document.getElementById('calibProgress');
+
+    const ring = document.getElementById('calibRing');
+    const ringCircle = ring ? ring.querySelector('circle') : null;
+    const textEl = document.getElementById('calibText');
+
     const toastEl = document.getElementById('toast');
     const infoEl = document.getElementById('devInfo');
     const overlay = document.getElementById('calibOverlay');
     const ring = document.getElementById('calibProgress');
     const textEl = document.getElementById('calibText');
+    const ring = document.getElementById('calibRing');
+    const msgEl = document.getElementById('calibMsg');
+
+    const textEl = document.getElementById('calibText');
+    const circumference = 352; // 2 * PI * r (r=56)
+
+>
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    let circumference = 0;
+    if (ringCircle) {
+        const r = parseFloat(ringCircle.getAttribute('r'));
+        circumference = 2 * Math.PI * r;
+        ringCircle.style.strokeDasharray = circumference;
+        ringCircle.style.strokeDashoffset = circumference;
+    }
 
     function beep() {
         const osc = audioCtx.createOscillator();
@@ -52,6 +72,39 @@ export function initCalibratorUI() {
             const max = 339; // circumference
             ring.style.strokeDashoffset = max - max * p;
         }
+
+    function showOverlay(show) {
+        if (!overlay) return;
+        overlay.classList.toggle('hidden', !show);
+    }
+
+    function update(progress, still) {
+        if (bar) bar.style.width = `${Math.round(progress * 100)}%`;
+        if (dot) dot.style.background = still ? 'limegreen' : 'red';
+        if (ring) {
+            const circ = 339.292; // 2*pi*r
+            ring.style.strokeDashoffset = circ * (1 - progress);
+        }
+    }
+
+    return {
+        update,
+        showOverlay,
+
+
+    }
+
+    function show() {
+        if (overlay) overlay.style.display = 'flex';
+        if (textEl) textEl.textContent = 'Bitte ruhig halten…';
+    }
+
+    function hide() {
+        if (overlay) overlay.style.display = 'none';
+        if (ringCircle) ringCircle.style.strokeDashoffset = circumference;
+        if (textEl) textEl.textContent = '';
+
+
     }
 
     return {
@@ -59,7 +112,25 @@ export function initCalibratorUI() {
             if (bar) bar.style.width = `${Math.round(progress * 100)}%`;
             if (dot) dot.style.background = still ? 'limegreen' : 'red';
             updateRing(progress);
+
+            if (ring) {
+                ring.style.strokeDashoffset = circumference * (1 - progress);
+            }
+            if (overlay) {
+                overlay.classList.toggle('hidden', progress >= 1);
+            }
+            if (textEl) {
+                textEl.textContent = 'Bitte ruhig halten…';
+            show();
+            if (ringCircle) {
+                ringCircle.style.strokeDashoffset = circumference * (1 - progress);
+                ringCircle.style.stroke = still ? 'limegreen' : 'tomato';
+            }
+
         },
+        show,
+        hide,
+
         showToast,
         showOverlay,
         hideOverlay,
@@ -70,6 +141,7 @@ export function initCalibratorUI() {
                 infoEl.textContent = text;
                 infoEl.style.display = text ? 'block' : 'none';
             }
+            if (msgEl) msgEl.textContent = text;
         }
     };
 }
