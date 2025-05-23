@@ -1,19 +1,17 @@
 export function initCalibratorUI() {
-    const overlay = document.getElementById('calibOverlay');
+
 
   
     const toastEl = document.getElementById('toast');
     const infoEl = document.getElementById('devInfo');
     const overlay = document.getElementById('calibOverlay');
-    const ring = document.getElementById('calibProgress');
-    const textEl = document.getElementById('calibText');
     const ring = document.getElementById('calibRing');
     const msgEl = document.getElementById('calibMsg');
 
     const textEl = document.getElementById('calibText');
-    const circumference = 352; // 2 * PI * r (r=56)
+ (r=56)
 
->
+
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     let circumference = 0;
