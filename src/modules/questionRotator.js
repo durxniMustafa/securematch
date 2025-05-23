@@ -32,11 +32,13 @@ function showQuestion(question) {
     set({
         mode: 'idle',
         question,
+        deadline: Date.now() + 8_000,
         deadline: Date.now() + QUESTION_TIME_MS,
         tally: { yes: 0, no: 0 },
     });
 
     updateQuestionUI(question);
+    startCountdown(8);
     startCountdown(QUESTION_TIME_MS / 1000, showQrPhase, true);
 }
 
@@ -49,6 +51,7 @@ function startCountdown(seconds, onDone, showRing = true) {
         ring.style.animation = 'none';
         // force reflow
         ring.getBoundingClientRect();
+        ring.style.animation = `countdown ${seconds}s linear forwards`;
         if (showRing) {
             ring.style.animation = `countdown ${seconds}s linear forwards`;
         }
@@ -81,6 +84,15 @@ function freezeUI() {
 
     // Show QR and countdown text
     const clockEl = document.getElementById('clock');
+    clockEl.classList.add('hidden');
+    const card = document.getElementById('questionCard');
+    if (card) card.classList.add('hidden');
+    // Show QR code
+    showQR('https://example.com/discussion');  // or some dynamic link
+    // Possibly stop vote meter or freeze it
+    // In this example, let's keep it displayed but not destroyed
+    // If you wanted to hide it, you could do:
+    // stopVoteMeter();
     clockEl.classList.remove('hidden');
     showQR('https://example.com/discussion');
     // Optionally stop vote meter etc.
