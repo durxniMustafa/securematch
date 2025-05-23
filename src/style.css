@@ -231,6 +231,38 @@ canvas {
     transition: stroke-dashoffset 0.1s linear;
 }
 
+.calib-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.progress-ring {
+    transform: rotate(-90deg);
+}
+
+#calibRing {
+    stroke: limegreen;
+    stroke-width: 8;
+    fill: transparent;
+    stroke-dasharray: 339.292; /* 2 * PI * r (r=54) */
+    stroke-dashoffset: 339.292;
+    transition: stroke-dashoffset 0.1s linear;
+}
+
+.calib-msg {
+    margin-top: 1rem;
+    background: rgba(0,0,0,0.6);
+    padding: 0.5rem 1rem;
+    border-radius: 0.35rem;
+}
+
+
 .toast {
     position: fixed;
     bottom: 2rem;

@@ -8,8 +8,13 @@ export function initCalibratorUI() {
 
     const toastEl = document.getElementById('toast');
     const infoEl = document.getElementById('devInfo');
+    const overlay = document.getElementById('calibOverlay');
+    const ring = document.getElementById('calibRing');
+    const msgEl = document.getElementById('calibMsg');
+
     const textEl = document.getElementById('calibText');
     const circumference = 352; // 2 * PI * r (r=56)
+
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     let circumference = 0;
@@ -45,6 +50,26 @@ export function initCalibratorUI() {
                 toastEl.style.opacity = '1';
             }, 300);
         }, 1000);
+    }
+
+    function showOverlay(show) {
+        if (!overlay) return;
+        overlay.classList.toggle('hidden', !show);
+    }
+
+    function update(progress, still) {
+        if (bar) bar.style.width = `${Math.round(progress * 100)}%`;
+        if (dot) dot.style.background = still ? 'limegreen' : 'red';
+        if (ring) {
+            const circ = 339.292; // 2*pi*r
+            ring.style.strokeDashoffset = circ * (1 - progress);
+        }
+    }
+
+    return {
+        update,
+        showOverlay,
+
 
     }
 
@@ -78,6 +103,7 @@ export function initCalibratorUI() {
         },
         show,
         hide,
+
         showToast,
         beep,
         updateInfo(text) {
@@ -85,6 +111,7 @@ export function initCalibratorUI() {
                 infoEl.textContent = text;
                 infoEl.style.display = text ? 'block' : 'none';
             }
+            if (msgEl) msgEl.textContent = text;
         }
     };
 }

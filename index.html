@@ -23,6 +23,13 @@
   </div>
   <div id="toast" class="toast" style="display:none"></div>
   <div id="devInfo" class="dev-info" style="display:none"></div>
+  <div id="calibOverlay" class="calib-overlay hidden">
+    <svg width="120" height="120" class="progress-ring">
+      <circle cx="60" cy="60" r="54" class="bg" />
+      <circle id="calibRing" cx="60" cy="60" r="54" class="fg" />
+    </svg>
+    <div id="calibMsg" class="calib-msg">Bitte ruhig halten…</div>
+  </div>
 
   <!-- Attractor -->
   <div id="attractor" class="animate-pulse flex flex-col items-center gap-4 text-center">
@@ -55,6 +62,7 @@
     <div id="voteIcon" class="text-6xl">👍</div>
 
     <div id="voteText" class="text-lg mt-2">Deine Stimme wurde gezählt</div>
+
 
 
     <div class="text-lg mt-2">Deine Stimme wurde gezählt</div>

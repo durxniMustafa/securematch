@@ -105,10 +105,12 @@ function showVoteFeedback(g) {
     const el = document.getElementById('voteFeedback');
     const icon = document.getElementById('voteIcon');
 
+
     const text = document.getElementById('voteText');
     if (!el || !icon) return;
     icon.textContent = g === 'yes' ? '👍' : '👎';
     if (text) text.textContent = `Du hast ${g === 'yes' ? 'Ja' : 'Nein'} gewählt`;
+
     if (!el || !icon) return;
     icon.textContent = g === 'yes' ? '👍' : '👎';
     el.classList.remove('hidden');
@@ -219,6 +221,11 @@ function tick(now) {
         // if user clicked calibrate or hasn't calibrated yet
         if ((pendingCalib && cal.state !== 'READY') || (cal.state === 'WAIT_STABLE' && !cal.active)) {
             cal.start(yaw, pitch);
+            if (pendingCalib) {
+                calibUI?.showToast('Bitte ruhig halten…');
+                calibUI?.showOverlay(true);
+            }
+
             if (pendingCalib) calibUI?.showToast('Bitte ruhig halten…');
 
             if (pendingCalib) {
@@ -229,17 +236,22 @@ function tick(now) {
             if (pendingCalib) calibUI?.showToast('Bitte ruhig halten…');
 
 
+
+         
         }
 
         const res = cal.update(yaw, pitch);
         if (res.baseline) {
             faceClassifier.calibrate(id, res.baseline);
 
+
             calibUI?.hide();
             calibUI?.showToast('✅ Kalibrierung fertig – nicke für Ja, schüttle für Nein');
 
+
             calibUI?.showToast('✅ Kalibrierung fertig – los geht\u2019s!');
             calibUI?.beep();
+            calibUI?.showOverlay(false);
         }
 
         // update calibrator UI for the main face (id=0)

@@ -34,7 +34,10 @@ function showQuestion(question) {
         question,
         deadline: Date.now() + 8_000,
 
+      
+
         deadline: Date.now() + QUESTION_TIME_MS,
+
 
         tally: { yes: 0, no: 0 },
     });
@@ -43,6 +46,7 @@ function showQuestion(question) {
     startCountdown(8);
 
     startCountdown(QUESTION_TIME_MS / 1000, showQrPhase, true);
+
 }
 
 // Simple countdown in seconds
@@ -56,9 +60,11 @@ function startCountdown(seconds, onDone, showRing = true) {
         ring.getBoundingClientRect();
         ring.style.animation = `countdown ${seconds}s linear forwards`;
 
+
         if (showRing) {
             ring.style.animation = `countdown ${seconds}s linear forwards`;
         }
+
 
     }
 
