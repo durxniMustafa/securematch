@@ -11,23 +11,43 @@
   <div id="toast" class="toast" style="display:none"></div>
   <div id="devInfo" class="dev-info" style="display:none"></div>
 
-  <!-- Attractor -->
-  <div id="attractor" class="animate-pulse flex flex-col items-center gap-4 text-center">
-    <img src="/img/shield.svg" class="w-24 h-24" />
-    <h1 class="text-3xl font-bold">Public Security Quiz</h1>
-    <p class="text-sm opacity-80">Step into the frame to begin</p>
-  </div>
+  <div id="cameraThumb" class="camera-thumb"></div>
 
-  <!-- Question + countdown -->
-  <h1 id="q" class="hidden text-2xl font-semibold text-center"></h1>
-  <div id="clock" class="hidden text-lg text-center"></div>
+  <div id="app" class="app-grid">
+    <!-- Attractor -->
+    <div id="attractor" class="animate-pulse flex flex-col items-center gap-4 text-center">
+      <img src="/img/shield.svg" class="w-24 h-24" />
+      <h1 class="text-3xl font-bold">Public Security Quiz</h1>
+      <p class="text-sm opacity-80">Step into the frame to begin</p>
+    </div>
 
-  <!-- Live vote chart -->
-  <canvas id="voteChart" class="hidden" width="400" height="200"></canvas>
+    <div id="topBar" class="top-bar hidden">
+      <h1 id="q" class="question"></h1>
+      <div id="timer" class="timer"><svg viewBox="0 0 36 36" class="progress-ring"><circle class="bg" cx="18" cy="18" r="16"/><circle class="progress" cx="18" cy="18" r="16"/></svg><span id="timeText"></span></div>
+    </div>
 
-  <div id="scoreboard" class="hidden flex gap-6 text-xl font-semibold mt-2">
-    <div>Yes: <span id="countYes">0</span></div>
-    <div>No: <span id="countNo">0</span></div>
+    <div id="voteButtons" class="vote-buttons hidden">
+      <button id="btnYes" aria-label="Cast 'Yes' vote">Yes</button>
+      <button id="btnNo" aria-label="Cast 'No' vote">No</button>
+    </div>
+
+    <canvas id="voteChart" class="hidden" width="400" height="200"></canvas>
+
+    <div id="scoreboard" class="hidden flex gap-6 text-xl font-semibold mt-2">
+      <div>Yes: <span id="countYes">0</span></div>
+      <div>No: <span id="countNo">0</span></div>
+    </div>
+
+    <section id="instructions" class="instructions">
+      <h2>How to Vote</h2>
+      <ul>
+        <li>Step in front of the camera.</li>
+        <li>Nod to vote <strong>Yes</strong>.</li>
+        <li>Shake your head to vote <strong>No</strong>.</li>
+        <li>Thumbs up or down works too.</li>
+        <li>Look straight at the camera and click <strong>Calibrate</strong>.</li>
+      </ul>
+  </section>
   </div>
 
   <!-- On‐screen YES/NO debug indicator -->
@@ -54,21 +74,9 @@
   <div id="qrContainer" class="hidden p-2 border-2 border-white rounded-md"></div>
 
   <div id="wsStatus" class="status disconnected">Reconnecting...</div>
-  <div id="logPanel" class="log-panel"></div>
+  <button id="debugToggle" class="debug-toggle">Debug</button>
+  <div id="logPanel" class="log-panel" style="display:none"></div>
 
-  <section id="instructions" class="instructions">
-    <h2>How to Vote</h2>
-    <ul>
-      <li>Step in front of the camera.</li>
-      <li>Nod to vote <strong>Yes</strong>.</li>
-      <li>Shake your head to vote <strong>No</strong>.</li>
-      <li>Thumbs up or down works too.</li>
-
-      <li>Look straight at the camera and click <strong>Calibrate</strong>.</li>
-
-
-    </ul>
-  </section>
 
   <!-- Intro modal for nod/shake usage -->
   <div id="gestureModal" class="modal" style="display:none">
