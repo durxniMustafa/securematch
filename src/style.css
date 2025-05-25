@@ -12,11 +12,6 @@ body {
     gap: 1rem;
     min-height: 100vh;
     margin: 0; /* Added to ensure no default body margin */
-    outline: none;
-}
-
-body:focus {
-    outline: none;
 }
 
 canvas {
@@ -154,7 +149,6 @@ canvas {
     white-space: pre-wrap;
     border: 1px solid rgba(0,0,0,0.1);
     z-index: 5;
-    display: none;
 }
 
 /* Custom scrollbar for logPanel (Webkit browsers) */
@@ -276,150 +270,5 @@ canvas {
     border: none;
     border-radius: 0.35rem;
     cursor: pointer;
-}
-
-/* --- New layout styles --- */
-.app-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1rem;
-    width: 100%;
-    max-width: 960px;
-    padding: 1rem;
-}
-
-@media (min-width: 1024px) {
-    .app-grid {
-        grid-template-columns: 2fr 1fr;
-        align-items: start;
-    }
-}
-
-.top-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-}
-
-.question {
-    font-size: 32px;
-    font-weight: 700;
-    margin: 0;
-}
-
-.timer {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    font-size: 18px;
-    font-weight: 600;
-    padding: 0.25rem 0.5rem;
-    border-radius: 1rem;
-    background: rgba(0,0,0,0.05);
-}
-
-.progress-ring {
-    width: 36px;
-    height: 36px;
-}
-.progress-ring circle {
-    fill: none;
-    stroke-width: 4;
-    stroke: #ccc;
-}
-.progress-ring .progress {
-    stroke: #007aff;
-    stroke-linecap: round;
-    transition: stroke-dashoffset 0.3s ease;
-}
-
-.vote-buttons {
-    display: flex;
-    width: 100%;
-    gap: 1rem;
-}
-
-@media (max-width: 1024px) {
-    .vote-buttons {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        padding: 0.5rem;
-        background: rgba(255,255,255,0.95);
-    }
-}
-
-.vote-buttons button {
-    flex: 1;
-    padding: 0.8rem 1rem;
-    font-size: 20px;
-    font-weight: 600;
-    border: none;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    transition: transform 0.1s ease, box-shadow 0.2s ease;
-}
-.vote-buttons button:hover {
-    transform: scale(1.05);
-}
-.vote-buttons button:active {
-    transform: scale(0.98);
-}
-#btnYes { background:#34c759; color:white; }
-#btnNo  { background:#ff3b30; color:white; }
-
-.instructions {
-    padding: 16px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    background: rgba(255,255,255,0.8);
-    font-weight: 400;
-}
-
-.camera-thumb {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    overflow: hidden;
-    cursor: pointer;
-    z-index: 1000;
-}
-.camera-thumb.expanded {
-    width: 60vw;
-    height: auto;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    border-radius: 0;
-}
-
-.debug-toggle {
-    position: fixed;
-    bottom: 1rem;
-    right: 1rem;
-    background: rgba(0,0,0,0.5);
-    color: white;
-    border: none;
-    border-radius: 0.5rem;
-    padding: 0.3rem 0.6rem;
-    cursor: pointer;
-    z-index: 10;
-}
-
-.flash-green { box-shadow: 0 0 0 4px rgba(52,199,89,0.7) inset; }
-.flash-red { box-shadow: 0 0 0 4px rgba(255,59,48,0.7) inset; }
-.pulse {
-    animation: pulseBtn 0.3s ease;
-}
-@keyframes pulseBtn {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
 }
 

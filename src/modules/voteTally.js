@@ -30,8 +30,7 @@ export function startVoteMeter() {
         },
         options: {
             responsive: false,
-            animation: { duration: 250 },
-            scales: { y: { beginAtZero: true, precision: 0, grid: { display: false } } }
+            scales: { y: { beginAtZero: true, precision: 0 } }
         }
     });
 
@@ -80,8 +79,6 @@ function updateChart() {
     if (!chart) return;
     const { tally } = get();
     chart.data.datasets[0].data = [tally.yes, tally.no];
-    const total = tally.yes + tally.no;
-    chart.options.scales.y.grid.display = total > 0;
     chart.update('none');
 
     const yesEl = document.getElementById('countYes');

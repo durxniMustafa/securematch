@@ -1,4 +1,4 @@
-export async function initCamera(width = 1280, height = 720, container = document.body) {
+export async function initCamera(width = 1280, height = 720) {
     const wrap = document.createElement('div');
     wrap.className = 'camera-wrap';
     wrap.style.position = 'relative';
@@ -49,7 +49,7 @@ export async function initCamera(width = 1280, height = 720, container = documen
     }
 
     wrap.append(video, canvas);
-    container.append(wrap);
+    document.body.append(wrap);
 
     return { video, canvas, videoTrack };
 }

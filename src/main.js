@@ -101,30 +101,7 @@ function showGesture(g) {
     el.textContent = g.toUpperCase();
     el.style.backgroundColor = (g === 'yes') ? 'limegreen' : 'tomato';
     el.style.display = 'block';
-    const cam = document.getElementById('cameraThumb');
-    const btn = document.getElementById(g === 'yes' ? 'btnYes' : 'btnNo');
-    cam?.classList.add(g === 'yes' ? 'flash-green' : 'flash-red');
-    btn?.classList.add('pulse');
-    playTone(g === 'yes' ? 880 : 220);
-    setTimeout(() => {
-        el.style.display = 'none';
-        cam?.classList.remove('flash-green', 'flash-red');
-        btn?.classList.remove('pulse');
-    }, 800);
-}
-
-function playTone(freq) {
-    const ctx = playTone.ctx || (playTone.ctx = new (window.AudioContext || window.webkitAudioContext)());
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = freq;
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2);
-    osc.stop(ctx.currentTime + 0.2);
+    setTimeout(() => (el.style.display = 'none'), 800);
 }
 
 /**
@@ -146,11 +123,8 @@ function registerVote(gesture) {
    SET-UP
    ──────────────────────────────────────────────────────────── */
 async function setup() {
-    document.body.setAttribute('tabindex', '-1');
-    document.body.focus();
     // 1) camera
-    const camContainer = document.getElementById('cameraThumb');
-    ({ video, canvas } = await initCamera(undefined, undefined, camContainer));
+    ({ video, canvas } = await initCamera());
 
     // 2) face + classifier
     faceDetector = await loadFaceDetector();
@@ -205,37 +179,11 @@ async function setup() {
         });
     }
 
-    const yesBtn = document.getElementById('btnYes');
-    const noBtn = document.getElementById('btnNo');
-    yesBtn?.addEventListener('click', () => registerVote('yes'));
-    noBtn?.addEventListener('click', () => registerVote('no'));
-
-    const camContainer = document.getElementById('cameraThumb');
-    camContainer?.addEventListener('click', () => {
-        camContainer.classList.toggle('expanded');
-    });
-
-    const logPanel = document.getElementById('logPanel');
-    const debugToggle = document.getElementById('debugToggle');
-    if (debugToggle && logPanel) {
-        debugToggle.addEventListener('click', () => {
-            const show = logPanel.style.display === 'none';
-            logPanel.style.display = show ? 'block' : 'none';
-        });
-    }
-
-    if (import.meta.env.MODE !== 'development') {
-        if (logPanel) logPanel.style.display = 'none';
-        if (debugToggle) debugToggle.style.display = 'none';
-    }
-
     document.addEventListener('keydown', e => {
-        if (e.key === 'y' || e.key === 'Y') {
+        if (e.code === 'Space') {
             registerVote('yes');
-        } else if (e.key === 'n' || e.key === 'N') {
+        } else if (e.code === 'Backspace') {
             registerVote('no');
-        } else if (e.key === 'c' || e.key === 'C') {
-            pendingCalib = true;
         }
     });
 
