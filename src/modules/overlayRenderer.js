@@ -42,7 +42,7 @@ export function drawOverlays(faces, hands, canvas, flashes = {}) {
 
         // highlight face box if we recently saw a gesture
         const info = flashes[i];
-        let color = 'white';
+        let color = 'lime';
         if (info && performance.now() - info.time < 400) {
             color = info.gesture === 'yes' ? 'lime' : 'red';
         }

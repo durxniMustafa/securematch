@@ -29,3 +29,9 @@ export const appendLog = msg => {
   if (state.logs.length > 100) state.logs.shift();
   set({ logs: state.logs });
 };
+
+export const incrementTally = gesture => {
+  if (!(gesture in state.tally)) return;
+  state.tally[gesture] += 1;
+  set({ tally: { ...state.tally } });
+};
