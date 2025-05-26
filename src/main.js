@@ -37,7 +37,7 @@ import { createHandGestureClassifier } from './modules/handGestureClassifier.js'
  *****************************************************************/
 import { drawOverlays } from './modules/overlayRenderer.js';
 import { createDebugOverlay } from './modules/debugOverlay.js';
-import { set, get, subscribe, appendLog } from './store.js';
+import { set, get, subscribe, appendLog, incrementTally } from './store.js';
 import {
     startVoteMeter,
     resetVoteMeter
@@ -111,6 +111,9 @@ function registerVote(gesture) {
     const now = performance.now();
     if (now - lastVoteTime[gesture] > COOLDOWN) {
         lastVoteTime[gesture] = now;
+        if (!get().wsConnected) {
+            incrementTally(gesture);
+        }
         sendVote(gesture);
         showGesture(gesture);
         appendLog(`Gesture accepted: ${gesture}`);
@@ -243,16 +246,27 @@ function tick(now) {
     });
     pendingCalib = false;
 
-    // face-lost state
+    // face-lost state & overlay feedback
+    const faceStatusEl = document.getElementById('faceStatus');
     if (faces.length) {
         if (!firstSeen) firstSeen = performance.now();
         lostSince = 0;
+        if (faceStatusEl) {
+            faceStatusEl.textContent = 'Face Tracked';
+            faceStatusEl.classList.add('tracked');
+            faceStatusEl.classList.remove('lost');
+        }
     } else {
         firstSeen = 0;
         if (!lostSince) lostSince = performance.now();
         if (performance.now() - lostSince > 1000) {
             calibUI?.showToast('Face lost — look at camera to resume.');
             lostSince = performance.now();
+        }
+        if (faceStatusEl) {
+            faceStatusEl.textContent = 'No Face';
+            faceStatusEl.classList.add('lost');
+            faceStatusEl.classList.remove('tracked');
         }
     }
 
